@@ -1,39 +1,39 @@
 /* ══════════════════════════════════════════════════════════════
    D-SWIFT  |  loginscript.js  (Supabase Auth version)
    Requires supabase-client.js to be loaded first (defines `sb`).
-
+ 
    Password hashing, email verification, and session tokens are now
    handled entirely by Supabase Auth — no more api/login.php,
    api/register.php, api/forgot_password.php, api/resend_verify.php.
-
+ 
    For backward compatibility with pages not yet migrated
    (profile.html, seller.html, etc.), we still mirror the logged-in
    user into localStorage under the same keys as before
    (swiftLoggedIn / swiftCurrentUser / swiftToken) every time auth
    state changes.
    ══════════════════════════════════════════════════════════════ */
-
+ 
 // ── Desktop flip ─────────────────────────────────────
 const registerButton = document.getElementById('register');
 const loginButton    = document.getElementById('login');
 const container      = document.getElementById('container');
 if (registerButton) registerButton.onclick = () => container.className = 'active';
 if (loginButton)    loginButton.onclick    = () => container.className = 'close';
-
+ 
 // ── Role selector ────────────────────────────────────
 function selectRole(role) {
     document.getElementById('regRole').value = role;
     document.getElementById('roleBuyer').classList.toggle('selected', role === 'buyer');
     document.getElementById('roleSeller').classList.toggle('selected', role === 'seller');
 }
-
+ 
 // ── Mobile tab switch ────────────────────────────────
 function mobSwitch(tab) {
     document.querySelector('.login').classList.toggle('mob-active', tab === 'login');
     document.querySelector('.register').classList.toggle('mob-active', tab === 'register');
     window.scrollTo(0, 0);
 }
-
+ 
 // ── Remember Me: prefill email left from a previous visit ─
 document.addEventListener('DOMContentLoaded', () => {
     const rememberedEmail = localStorage.getItem('swiftRememberedEmail');
@@ -44,12 +44,12 @@ document.addEventListener('DOMContentLoaded', () => {
         rememberBox.checked = true;
     }
 });
-
+ 
 // ── syncLegacyUserStorage() lives in supabase-client.js now — it runs
 //    automatically on every auth state change (see onAuthStateChange
 //    there), so login/register below just need to await it once to get
 //    the freshly-synced legacy user object back for the redirect logic.
-
+ 
 function showToast(message) {
     const toast = document.getElementById('swiftToast');
     if (!toast) return;
@@ -58,7 +58,7 @@ function showToast(message) {
     clearTimeout(showToast._timer);
     showToast._timer = setTimeout(() => toast.classList.remove('show'), 2500);
 }
-
+ 
 // ── Social connect buttons — real Supabase OAuth ─────
 // Provider IDs Supabase expects: github, facebook, linkedin_oidc, twitter.
 // Each provider must first be enabled (with its own client id/secret) in
@@ -70,7 +70,7 @@ const OAUTH_PROVIDER_MAP = {
     github:   'github',
     linkedin: 'linkedin_oidc',
 };
-
+ 
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.social-icon').forEach(el => {
         el.addEventListener('click', async (e) => {
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const key      = (el.dataset.provider || '').toLowerCase();
             const provider = OAUTH_PROVIDER_MAP[key];
             if (!provider) return;
-
+ 
             const role = document.getElementById('regRole')?.value || 'buyer';
             const { error } = await sb.auth.signInWithOAuth({
                 provider,
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
-
+ 
 // ════════════════════════════════════════════════════
 //  REGISTER
 // ════════════════════════════════════════════════════
@@ -102,24 +102,37 @@ document.getElementById('registerBtn').addEventListener('click', async function 
     const phone    = document.getElementById('regPhone').value.trim();
     const role     = document.getElementById('regRole').value;
     const errorEl  = document.getElementById('regError');
-
+ 
     errorEl.style.color = '#ff4b2b';
     if (!name || !email || !password || !phone) { errorEl.textContent = 'Please fill in all required fields.'; return; }
     if (password.length < 6)          { errorEl.textContent = 'Password must be at least 6 characters.'; return; }
-
+ 
     this.disabled = true; this.textContent = 'Creating account…';
-
+ 
     try {
         // name/phone/role ride along as user_metadata — the
         // handle_new_user() trigger on the database reads them to
         // populate the profiles row automatically.
+        //
+        // emailRedirectTo pins the confirmation link to THIS page
+        // explicitly, working out its own full URL at runtime — so it's
+        // correct whether you're testing on XAMPP (http://localhost/dswift/login.html)
+        // or the live GitHub Pages site (https://dav1d-agboka.github.io/login.html),
+        // with no hardcoded domain. This still only works once that exact
+        // origin is added to Supabase Dashboard → Authentication → URL
+        // Configuration → Redirect URLs — Supabase silently ignores
+        // emailRedirectTo values that aren't on that allow-list and falls
+        // back to the project's default Site URL instead.
         const { data, error } = await sb.auth.signUp({
             email, password,
-            options: { data: { name, phone, role } }
+            options: {
+                data: { name, phone, role },
+                emailRedirectTo: window.location.href.replace(/[^/]*$/, '') + 'login.html',
+            }
         });
-
+ 
         if (error) { errorEl.textContent = error.message; return; }
-
+ 
         // Supabase's default settings require email confirmation before a
         // session is issued — data.session is null in that case.
         if (!data.session) {
@@ -128,14 +141,14 @@ document.getElementById('registerBtn').addEventListener('click', async function 
             this.textContent = 'Create Account';
             return;
         }
-
+ 
         await syncLegacyUserStorage(data.session);
         errorEl.style.color = '#4ecdc4';
         errorEl.textContent = '✅ Account created! Redirecting…';
         setTimeout(() => {
             window.location.href = role === 'seller' ? 'seller.html' : 'profile.html';
         }, 1500);
-
+ 
     } catch (err) {
         errorEl.textContent = 'Network error. Check your connection and try again.';
     } finally {
@@ -143,7 +156,7 @@ document.getElementById('registerBtn').addEventListener('click', async function 
         if (this.textContent === 'Creating account…') this.textContent = 'Create Account';
     }
 });
-
+ 
 // ════════════════════════════════════════════════════
 //  LOGIN
 // ════════════════════════════════════════════════════
@@ -151,15 +164,15 @@ document.getElementById('loginBtn').addEventListener('click', async function () 
     const email    = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
     const errorEl  = document.getElementById('loginError');
-
+ 
     errorEl.style.color = '#ff4b2b';
     if (!email || !password) { errorEl.textContent = 'Please enter your email and password.'; return; }
-
+ 
     this.disabled = true; this.textContent = 'Logging in…';
-
+ 
     try {
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
-
+ 
         if (error) {
             if (error.message.toLowerCase().includes('email not confirmed')) {
                 errorEl.innerHTML = `Your email is not verified yet. 
@@ -171,28 +184,28 @@ document.getElementById('loginBtn').addEventListener('click', async function () 
             errorEl.textContent = 'Incorrect email or password.';
             return;
         }
-
+ 
         const legacyUser = await syncLegacyUserStorage(data.session);
-
+ 
         if (document.getElementById('rememberMe')?.checked) {
             localStorage.setItem('swiftRememberedEmail', email);
         } else {
             localStorage.removeItem('swiftRememberedEmail');
         }
-
+ 
         errorEl.style.color = '#4ecdc4';
         errorEl.textContent = 'Login successful! Redirecting…';
         setTimeout(() => {
             window.location.href = (legacyUser?.role === 'seller') ? 'seller.html' : 'profile.html';
         }, 800);
-
+ 
     } catch (err) {
         errorEl.textContent = 'Network error. Check your connection and try again.';
     } finally {
         this.disabled = false; this.textContent = 'Log In';
     }
 });
-
+ 
 // ════════════════════════════════════════════════════
 //  FORGOT PASSWORD
 // ════════════════════════════════════════════════════
@@ -204,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
         forgetSpan.onclick = () => document.getElementById('forgotModal').style.display = 'flex';
     }
 });
-
+ 
 function injectForgotModal() {
     const modal = document.createElement('div');
     modal.id = 'forgotModal';
@@ -219,7 +232,7 @@ function injectForgotModal() {
         <button id="forgotBtn" onclick="sendReset()">Send Reset Link</button>
         <div id="forgotMsg"></div>
     </div>`;
-
+ 
     const style = document.createElement('style');
     style.textContent = `
     #forgotModal { position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999; }
@@ -246,22 +259,22 @@ function injectForgotModal() {
     document.head.appendChild(style);
     document.body.appendChild(modal);
 }
-
+ 
 function closeForgot() {
     document.getElementById('forgotModal').style.display = 'none';
     document.getElementById('forgotMsg').textContent = '';
     document.getElementById('forgotEmail').value = '';
 }
-
+ 
 async function sendReset() {
     const email = document.getElementById('forgotEmail').value.trim();
     const msgEl = document.getElementById('forgotMsg');
     const btn   = document.getElementById('forgotBtn');
-
+ 
     if (!email) { msgEl.style.color='#e74c3c'; msgEl.textContent = 'Please enter your email.'; return; }
-
+ 
     btn.disabled = true; btn.textContent = 'Sending…';
-
+ 
     try {
         const { error } = await sb.auth.resetPasswordForEmail(email, {
             redirectTo: window.location.origin + window.location.pathname.replace(/login\.html$/, '') + 'reset_password.html'
@@ -276,7 +289,7 @@ async function sendReset() {
         btn.disabled = false; btn.textContent = 'Send Reset Link';
     }
 }
-
+ 
 // ════════════════════════════════════════════════════
 //  RESEND VERIFICATION EMAIL
 // ════════════════════════════════════════════════════
