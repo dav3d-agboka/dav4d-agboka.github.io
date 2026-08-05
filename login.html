@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Swift — Login & Sign Up</title>
+    <link rel="stylesheet" href="loginstyle.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <style>
+        /* Role selector */
+        .role-selector {
+            display: flex; gap: 12px; margin: 14px 0;
+        }
+        .role-btn {
+            flex: 1; padding: 12px 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px; background: #f8f8f8;
+            cursor: pointer; text-align: center;
+            transition: all 0.2s; font-family: inherit;
+            font-size: 1.3rem; color: #555;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 6px;
+            text-transform: none; letter-spacing: 0;
+            font-weight: 600; margin: 0;
+        }
+        .role-btn i { font-size: 1.8rem; }
+        .role-btn.selected {
+            border-color: #ff4b2b;
+            background: #fff5f3;
+            color: #ff4b2b;
+        }
+        .role-btn small { font-size: 1rem; font-weight: 400; color: inherit; opacity: 0.8; }
+        .role-label { font-size: 1.25rem; color: #888; text-align: left; margin: 6px 0 2px; display: block; }
+    </style>
+</head>
+<body>
+<div id="container">
+
+    <!-- LOGIN PANEL -->
+    <div class="login mob-active">
+        <div class="content">
+            <h1>Log In</h1>
+            <form onsubmit="return false;">
+                <input type="email"    id="loginEmail"    placeholder="Email" autocomplete="email"/>
+                <input type="password" id="loginPassword" placeholder="Password"/>
+                <label class="remember-label"><input type="checkbox" id="rememberMe"> Remember me</label>
+                <span class="forget">Forgot Password</span>
+                <span class="clearfix"></span>
+                <span id="loginError" class="error-msg"></span>
+                <button id="loginBtn">Log In</button>
+            </form>
+            <span class="loginwith">Or Connect with</span>
+            <a href="#" class="social-icon" data-provider="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" class="social-icon" data-provider="Twitter"><i class="fa-brands fa-twitter"></i></a>
+            <a href="#" class="social-icon" data-provider="GitHub"><i class="fa-brands fa-github"></i></a>
+            <a href="#" class="social-icon" data-provider="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+            <div class="mob-switch-row">Don't have an account? <span onclick="mobSwitch('register')">Sign Up</span></div>
+            <div class="back-link"><a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a></div>
+            <span class="copy">&copy; 2027 Swift</span>
+        </div>
+    </div>
+
+    <!-- FLIP FRONT (desktop) -->
+    <div class="page front">
+        <div class="content">
+            <i class="fa-solid fa-user-plus userIcon"></i>
+            <h1>Hello, Friend!</h1>
+            <p>Enter your details and start your journey with us</p>
+            <button id="register">Register <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <!-- FLIP BACK (desktop) -->
+    <div class="page back">
+        <div class="content">
+            <i class="fa-solid fa-right-to-bracket bracketIcon"></i>
+            <h1>Welcome Back!</h1>
+            <p>Login with your personal info to keep connected</p>
+            <button id="login"><i class="fa-solid fa-arrow-left"></i> Log In</button>
+        </div>
+    </div>
+
+    <!-- REGISTER PANEL -->
+    <div class="register">
+        <div class="content">
+            <h1>Sign Up</h1>
+            <a href="#" class="social-icon" data-provider="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" class="social-icon" data-provider="Twitter"><i class="fa-brands fa-twitter"></i></a>
+            <a href="#" class="social-icon" data-provider="GitHub"><i class="fa-brands fa-github"></i></a>
+            <a href="#" class="social-icon" data-provider="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+            <span class="loginwith">Or</span>
+            <form onsubmit="return false;">
+                <input type="text"     id="regName"     placeholder="Full Name *"/>
+                <input type="email"    id="regEmail"    placeholder="Email *"/>
+                <input type="password" id="regPassword" placeholder="Password * (min 6 chars)"/>
+                <input type="tel"      id="regPhone"    placeholder="Phone Number *"/>
+
+                <!-- Role selector -->
+                <span class="role-label">I want to join as:</span>
+                <div class="role-selector">
+                    <button type="button" class="role-btn selected" id="roleBuyer" onclick="selectRole('buyer')">
+                        <i class="fas fa-shopping-bag"></i>
+                        Buyer
+                        <small>Browse & buy products</small>
+                    </button>
+                    <button type="button" class="role-btn" id="roleSeller" onclick="selectRole('seller')">
+                        <i class="fas fa-store"></i>
+                        Seller
+                        <small>List & sell products</small>
+                    </button>
+                </div>
+                <input type="hidden" id="regRole" value="buyer"/>
+
+                <span id="regError" class="error-msg"></span>
+                <button id="registerBtn">Create Account</button>
+            </form>
+            <div class="mob-switch-row">Already have an account? <span onclick="mobSwitch('login')">Log In</span></div>
+            <div class="back-link"><a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a></div>
+        </div>
+    </div>
+
+</div>
+
+<div class="swift-toast" id="swiftToast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script src="loginscript.js"></script>
+<script>
+    function mobSwitch(tab) {
+        document.querySelector('.login').classList.toggle('mob-active', tab === 'login');
+        document.querySelector('.register').classList.toggle('mob-active', tab === 'register');
+        window.scrollTo(0, 0);
+    }
+    function selectRole(role) {
+        document.getElementById('regRole').value = role;
+        document.getElementById('roleBuyer').classList.toggle('selected', role === 'buyer');
+        document.getElementById('roleSeller').classList.toggle('selected', role === 'seller');
+    }
+</script>
+</html>

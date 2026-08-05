@@ -1,0 +1,97 @@
+body { color: #fff; }
+
+.right_conatct_social_icon {
+    background: linear-gradient(to top right, #1325e8 -5%, #8f10b7 100%);
+}
+.contact_us {
+    background-color: #f1f1f1;
+    padding: clamp(40px, 8vw, 120px) 0;
+}
+.contact_inner {
+    background-color: #fff;
+    position: relative;
+    box-shadow: 20px 22px 44px #cccc;
+    border-radius: 25px;
+}
+.contact_field {
+    padding: clamp(30px, 5vw, 60px) clamp(20px, 25vw, 340px) clamp(40px, 7vw, 90px) clamp(20px, 7vw, 100px);
+}
+.right_conatct_social_icon { height: 100%; }
+.contact_field h3 {
+    color: #000;
+    font-size: clamp(22px, 4vw, 40px);
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.contact_field p {
+    color: #000;
+    font-size: clamp(11px, 1.5vw, 13px);
+    font-weight: 400;
+    letter-spacing: 1px;
+    margin-bottom: 35px;
+}
+.contact_field .form-control {
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid #ccc;
+}
+.contact_field .form-control:focus {
+    box-shadow: none;
+    outline: none;
+    border-bottom: 2px solid #1325e8;
+}
+.contact_field .form-control::placeholder {
+    font-size: 13px;
+    letter-spacing: 1px;
+}
+.contact_info_sec {
+    position: absolute;
+    background-color: #2d2d2d;
+    right: 1px;
+    color: #fff;
+    top: 18%;
+    height: 340px;
+    width: clamp(200px, 25vw, 340px);
+    padding: clamp(20px, 3vw, 40px);
+    border-radius: 25px 0 0 25px;
+}
+.contact_info_sec h4 { letter-spacing: 1px; padding-bottom: 15px; }
+.info_single { margin: clamp(15px, 2.5vw, 30px) 0; }
+.info_single i { margin-right: 15px; }
+.info_single span { font-size: clamp(11px, 1.4vw, 14px); letter-spacing: 1px; }
+button.contact_form_submit {
+    background: linear-gradient(to top right, #1325e8 -5%, #8f10b7 100%);
+    border: none;
+    color: #fff;
+    padding: 10px 15px;
+    width: 100%;
+    margin-top: 25px;
+    border-radius: 35px;
+    cursor: pointer;
+    font-size: 14px;
+    letter-spacing: 2px;
+}
+.socil_item_inner li { list-style: none; }
+.socil_item_inner li a { color: #fff; margin: 0 15px; font-size: 14px; }
+.socil_item_inner { padding-bottom: 10px; }
+
+/* Mobile fix — contact info box stacks below form */
+@media (max-width: 700px) {
+    .contact_field {
+        padding: 30px 20px 200px 20px;
+    }
+    .contact_info_sec {
+        position: absolute;
+        width: calc(100% - 2px);
+        right: 1px;
+        top: auto;
+        bottom: 0;
+        height: auto;
+        border-radius: 0 0 25px 25px;
+        padding: 20px;
+    }
+    .contact_info_sec h4 { font-size: 1rem; }
+    .info_single span { font-size: 12px; }
+    .info_single { margin: 12px 0; }
+}

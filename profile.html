@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Swift — My Profile</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <style>
+        :root {
+            --primary:#ff6b6b; --secondary:#4ecdc4;
+            --dark:#1a1a2e; --accent:#ffd166;
+            --green:#0ba87e; --bg:#f0f2f5;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+        body { background:var(--bg); min-height:100vh; }
+
+        /* TOP BAR */
+        .top-bar {
+            background:linear-gradient(135deg,var(--primary),var(--secondary));
+            color:white; padding:14px 20px;
+            display:flex; align-items:center; justify-content:space-between;
+            position:sticky; top:0; z-index:100;
+            box-shadow:0 2px 10px rgba(0,0,0,0.15);
+        }
+        .top-bar h2 { font-size:1.1rem; }
+        .top-bar a  { color:white; text-decoration:none; font-size:1.2rem; }
+
+        /* COVER + AVATAR */
+        .cover {
+            height:140px;
+            background:linear-gradient(135deg,#ff6b6b 0%,#ffd166 50%,#4ecdc4 100%);
+            position:relative;
+        }
+        .avatar-wrap {
+            position:absolute; bottom:-48px; left:50%; transform:translateX(-50%);
+            text-align:center;
+        }
+        .avatar-wrap img {
+            width:96px; height:96px; border-radius:50%;
+            border:4px solid white; object-fit:cover;
+            background:#ddd; box-shadow:0 4px 14px rgba(0,0,0,0.2);
+        }
+        .avatar-edit-btn {
+            position:absolute; bottom:2px; right:2px;
+            background:var(--primary); color:white; border:none;
+            border-radius:50%; width:26px; height:26px;
+            font-size:0.65rem; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+        }
+        #avatarInput { display:none; }
+
+        /* ROLE BADGE */
+        .role-badge {
+            display:inline-block; margin-top:8px;
+            padding:3px 12px; border-radius:20px;
+            font-size:0.72rem; font-weight:700; text-transform:uppercase;
+        }
+        .role-buyer  { background:#e8f0ff; color:#3a5fd9; }
+        .role-seller { background:#e8faf5; color:var(--green); }
+
+        /* PROFILE CARD */
+        .profile-card {
+            background:white; border-radius:16px;
+            margin:58px 16px 14px; padding:16px;
+            box-shadow:0 4px 14px rgba(0,0,0,0.08);
+            text-align:center;
+        }
+        .profile-card h2  { font-size:1.25rem; color:var(--dark); margin-bottom:3px; }
+        .profile-card .email { color:#888; font-size:0.82rem; margin-bottom:4px; }
+        .profile-card .bio   { color:#666; font-size:0.85rem; font-style:italic; margin:8px 0; }
+        .join-date { font-size:0.75rem; color:#bbb; }
+
+        .stats-row { display:flex; border-top:1px solid #f0f0f0; margin-top:12px; padding-top:12px; }
+        .stat { flex:1; text-align:center; border-right:1px solid #f0f0f0; }
+        .stat:last-child { border-right:none; }
+        .stat h4 { font-size:1.1rem; color:var(--dark); }
+        .stat p  { font-size:0.7rem; color:#888; }
+
+        /* SECTION */
+        .section {
+            background:white; border-radius:16px;
+            margin:0 16px 14px; padding:16px;
+            box-shadow:0 3px 12px rgba(0,0,0,0.06);
+        }
+        .section-title {
+            font-size:0.95rem; font-weight:700; color:var(--dark);
+            margin-bottom:14px; display:flex;
+            align-items:center; justify-content:space-between;
+        }
+        .section-title i { color:var(--primary); margin-right:8px; }
+
+        /* DETAIL ROWS */
+        .detail-row {
+            display:flex; align-items:center; gap:12px;
+            padding:10px 0; border-bottom:1px solid #f5f5f5;
+        }
+        .detail-row:last-child { border-bottom:none; }
+        .detail-icon {
+            width:34px; height:34px; border-radius:50%;
+            background:#fff0f0; display:flex; align-items:center;
+            justify-content:center; color:var(--primary);
+            font-size:0.82rem; flex-shrink:0;
+        }
+        .detail-label { font-size:0.7rem; color:#aaa; }
+        .detail-value { font-size:0.88rem; color:var(--dark); font-weight:500; }
+
+        /* EDIT FORM */
+        .edit-form { display:none; flex-direction:column; gap:10px; }
+        .edit-form.open { display:flex; }
+        .edit-form label { font-size:0.75rem; color:#888; margin-bottom:-4px; }
+        .edit-form input,
+        .edit-form textarea {
+            border:1.5px solid #e0e0e0; border-radius:10px;
+            padding:10px 13px; font-size:0.88rem; outline:none;
+            font-family:inherit; width:100%; transition:border 0.2s;
+        }
+        .edit-form input:focus,
+        .edit-form textarea:focus { border-color:var(--primary); }
+        .edit-form textarea { resize:vertical; min-height:70px; }
+
+        /* ORDERS */
+        .order-item {
+            background:#f8f9fa; border-radius:10px;
+            padding:12px; margin-bottom:10px;
+        }
+        .order-item:last-child { margin-bottom:0; }
+        .order-header {
+            display:flex; justify-content:space-between;
+            align-items:center; margin-bottom:8px;
+        }
+        .order-id   { font-size:0.78rem; font-weight:700; color:var(--dark); }
+        .order-date { font-size:0.7rem; color:#aaa; }
+        .order-status {
+            font-size:0.68rem; font-weight:700; padding:3px 9px;
+            border-radius:20px; background:#e8faf5; color:var(--green);
+        }
+        .order-products { font-size:0.8rem; color:#555; margin-bottom:6px; }
+        .order-total { font-size:0.9rem; font-weight:700; color:var(--primary); }
+
+        /* BUTTONS */
+        .btn-row { display:flex; gap:10px; }
+        .btn {
+            flex:1; padding:10px; border:none; border-radius:10px;
+            font-size:0.88rem; font-weight:600; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            gap:6px; text-decoration:none; font-family:inherit;
+            transition:all 0.2s;
+        }
+        .btn-primary   { background:var(--primary); color:white; }
+        .btn-primary:hover   { background:#e05555; }
+        .btn-secondary { background:#f0f0f0; color:var(--dark); }
+        .btn-green     { background:#e8faf5; color:var(--green); border:1.5px solid var(--green); }
+        .btn-green:hover { background:var(--green); color:white; }
+
+        /* SELLER LINK CARD */
+        .seller-card {
+            background:linear-gradient(135deg,var(--dark),#2d2d5e);
+            border-radius:16px; margin:0 16px 14px; padding:18px;
+            color:white; display:flex; align-items:center;
+            justify-content:space-between;
+        }
+        .seller-card h3 { font-size:1rem; margin-bottom:4px; }
+        .seller-card p  { font-size:0.78rem; opacity:0.8; }
+        .seller-card a  {
+            background:var(--accent); color:var(--dark);
+            padding:9px 18px; border-radius:20px;
+            text-decoration:none; font-weight:700; font-size:0.82rem;
+            white-space:nowrap; flex-shrink:0;
+        }
+
+        /* LOGOUT */
+        .logout-section { margin:0 16px 20px; }
+        .logout-btn {
+            width:100%; padding:13px; background:var(--primary); color:white;
+            border:none; border-radius:10px; font-size:0.95rem; font-weight:700;
+            cursor:pointer; display:flex; align-items:center;
+            justify-content:center; gap:10px; font-family:inherit;
+            transition:background 0.2s;
+        }
+        .logout-btn:hover { background:#e05555; }
+
+        /* NOT LOGGED IN */
+        .not-logged-in {
+            display:none; flex-direction:column; align-items:center;
+            justify-content:center; min-height:80vh;
+            text-align:center; padding:2rem;
+        }
+        .not-logged-in i { font-size:4rem; color:#ddd; margin-bottom:1rem; }
+        .not-logged-in h2 { color:var(--dark); margin-bottom:0.5rem; }
+        .not-logged-in p  { color:#888; margin-bottom:1.5rem; font-size:0.9rem; }
+        .not-logged-in a  {
+            background:var(--primary); color:white; padding:12px 30px;
+            border-radius:30px; text-decoration:none; font-weight:600;
+        }
+
+        /* EMPTY STATE */
+        .empty-state { text-align:center; padding:24px; color:#ccc; }
+        .empty-state i { font-size:2rem; margin-bottom:8px; display:block; }
+        .empty-state p { font-size:0.82rem; }
+
+        /* TOAST */
+        .toast {
+            position:fixed; bottom:80px; left:50%;
+            transform:translateX(-50%) translateY(30px);
+            background:var(--dark); color:white; padding:10px 22px;
+            border-radius:30px; font-size:0.82rem; z-index:9999;
+            opacity:0; transition:all 0.3s; white-space:nowrap;
+        }
+        .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+        @media (min-width:601px) { body { max-width:520px; margin:0 auto; } }
+
+        /* WISHLIST */
+        .wishlist-item {
+            display:flex; gap:12px; padding:10px 0;
+            border-bottom:1px solid #f5f5f5; align-items:center;
+        }
+        .wishlist-item:last-child { border-bottom:none; }
+        .wishlist-item img {
+            width:58px; height:58px; border-radius:10px;
+            object-fit:cover; background:#f0f0f0; flex-shrink:0;
+        }
+        .wishlist-item-info { flex:1; min-width:0; }
+        .wishlist-item-name  { font-weight:600; font-size:0.88rem; color:var(--dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .wishlist-item-cat   { font-size:0.72rem; color:var(--primary); margin:2px 0; }
+        .wishlist-item-price { font-size:0.9rem; font-weight:700; color:var(--dark); }
+        .rm-wishlist {
+            width:30px; height:30px; border-radius:50%;
+            background:#fff0f0; border:none; color:var(--primary);
+            cursor:pointer; display:flex; align-items:center; justify-content:center;
+            font-size:0.85rem; flex-shrink:0; transition:all 0.2s;
+        }
+        .rm-wishlist:hover { background:var(--primary); color:white; }
+
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <a href="index.html"><i class="fas fa-arrow-left"></i></a>
+    <h2>My Profile</h2>
+    <a href="index.html"><i class="fas fa-home"></i></a>
+</div>
+
+<!-- NOT LOGGED IN -->
+<div class="not-logged-in" id="notLoggedIn">
+    <i class="fas fa-user-lock"></i>
+    <h2>You're not logged in</h2>
+    <p>Please login or create an account to view your profile.</p>
+    <a href="login.html"><i class="fas fa-sign-in-alt"></i> Login / Register</a>
+</div>
+
+<!-- LOGGED IN -->
+<div id="profileContent" style="display:none;">
+
+    <div class="cover">
+        <div class="avatar-wrap">
+            <img id="profileAvatar" src="" alt="Avatar">
+            <button class="avatar-edit-btn" onclick="document.getElementById('avatarInput').click()">
+                <i class="fas fa-camera"></i>
+            </button>
+            <input type="file" id="avatarInput" accept="image/*">
+        </div>
+    </div>
+
+    <div class="profile-card">
+        <h2 id="displayName">—</h2>
+        <div class="email" id="displayEmail">—</div>
+        <span class="role-badge" id="roleBadge"></span>
+        <div class="bio" id="displayBio"></div>
+        <div class="join-date" id="displayJoin"></div>
+        <div class="stats-row" id="statsRow"></div>
+    </div>
+
+    <!-- Seller shortcut card (only for sellers) -->
+    <div class="seller-card" id="sellerCard" style="display:none;">
+        <div>
+            <h3><i class="fas fa-store"></i> Seller Dashboard</h3>
+            <p>Manage products, view sales & earnings</p>
+        </div>
+        <a href="seller.html">Go &rsaquo;</a>
+    </div>
+
+    <!-- Personal Details -->
+    <div class="section">
+        <div class="section-title">
+            <span><i class="fas fa-id-card"></i> Personal Details</span>
+        </div>
+
+        <!-- View mode -->
+        <div id="viewMode">
+            <div class="detail-row">
+                <div class="detail-icon"><i class="fas fa-user"></i></div>
+                <div><div class="detail-label">Full Name</div><div class="detail-value" id="detailName">—</div></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-icon"><i class="fas fa-envelope"></i></div>
+                <div><div class="detail-label">Email</div><div class="detail-value" id="detailEmail">—</div></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-icon"><i class="fas fa-phone"></i></div>
+                <div><div class="detail-label">Phone</div><div class="detail-value" id="detailPhone">—</div></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-icon"><i class="fas fa-map-marker-alt"></i></div>
+                <div><div class="detail-label">Location</div><div class="detail-value" id="detailLocation">—</div></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-icon"><i class="fas fa-calendar"></i></div>
+                <div><div class="detail-label">Member Since</div><div class="detail-value" id="detailJoin">—</div></div>
+            </div>
+            <div style="margin-top:14px;">
+                <button class="btn btn-primary" onclick="openEdit()" style="width:100%;">
+                    <i class="fas fa-pen"></i> Edit Profile
+                </button>
+            </div>
+        </div>
+
+        <!-- Edit mode -->
+        <div class="edit-form" id="editForm">
+            <label>Full Name</label>
+            <input type="text" id="editName" placeholder="Your full name"/>
+            <label>Phone</label>
+            <input type="tel"  id="editPhone" placeholder="+233 ..."/>
+            <label>Location</label>
+            <input type="text" id="editLocation" placeholder="City, Country"/>
+            <label>Bio</label>
+            <textarea id="editBio" placeholder="Tell us about yourself..."></textarea>
+            <label>New Password (leave blank to keep current)</label>
+            <input type="password" id="editPassword" placeholder="New password (min 6 chars)"/>
+            <div class="btn-row">
+                <button class="btn btn-green" onclick="saveProfile()"><i class="fas fa-check"></i> Save</button>
+                <button class="btn btn-secondary" onclick="closeEdit()"><i class="fas fa-times"></i> Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders (buyers only) -->
+    <div class="section" id="ordersSection" style="display:none;">
+        <div class="section-title"><span><i class="fas fa-shopping-bag"></i> My Orders</span></div>
+        <div id="ordersList">
+            <div class="empty-state"><i class="fas fa-shopping-bag"></i><p>No orders yet.</p></div>
+        </div>
+    </div>
+
+    <!-- Wishlist Section -->
+    <div class="section" id="wishlistSection">
+        <div class="section-title"><span><i class="fas fa-heart" style="color:var(--primary);"></i> My Wishlist</span></div>
+        <div id="wishlistItems"><div class="empty-state"><i class="fas fa-heart"></i><p>No wishlisted items yet.</p></div></div>
+    </div>
+
+    <!-- Account actions -->
+    <div class="section">
+        <div class="section-title"><span><i class="fas fa-cog"></i> Account</span></div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <a href="index.html" class="btn btn-secondary"><i class="fas fa-shopping-bag"></i> Continue Shopping</a>
+            <a href="messages.html" class="btn btn-secondary"><i class="fas fa-comments"></i> My Messages</a>
+        </div>
+    </div>
+
+    <!-- Logout -->
+    <div class="logout-section">
+        <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Log Out
+        </button>
+    </div>
+
+</div>
+
+<!-- CHAT MODAL (buyer <-> seller, per order) -->
+<div id="chatOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1998;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;width:92%;max-width:420px;height:70vh;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="padding:14px 18px;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <div style="font-weight:700;font-size:0.95rem;">Chat — Order <span id="chatOrderRef"></span></div>
+                <div style="font-size:0.7rem;opacity:.85;">with the seller</div>
+            </div>
+            <button onclick="closeChat()" style="border:none;background:rgba(255,255,255,.2);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="chatMessages" style="flex:1;overflow-y:auto;padding:14px;background:#f8f9fa;display:flex;flex-direction:column;gap:8px;"></div>
+        <div style="padding:10px;border-top:1px solid #f0f0f0;display:flex;gap:8px;">
+            <input type="text" id="chatInput" placeholder="Type a message…" style="flex:1;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:0.88rem;font-family:inherit;outline:none;">
+            <button onclick="sendChatMessage()" style="border:none;background:var(--primary);color:#fff;width:40px;border-radius:10px;cursor:pointer;flex-shrink:0;"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+// ── Auth check (Supabase) ──
+// currentProfile/realOrders/realWishlist/sellerStats are populated by
+// init() below before loadProfile()/renderWishlist() ever run, avoiding
+// the old "reference before data arrives" bug that used to blank out
+// the Personal Details section.
+let currentProfile = null; // the profiles table row for the signed-in user
+let realOrders      = [];
+let realWishlist     = [];
+let sellerStats      = { productCount: 0, sales: [] };
+
+async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+        document.getElementById('notLoggedIn').style.display = 'flex';
+        return;
+    }
+    document.getElementById('profileContent').style.display = 'block';
+
+    await fetchRealProfile(session.user.id);
+    if (!currentProfile) return;
+
+    await fetchRealOrders(session.user.id);
+    if (currentProfile.role === 'seller') await fetchSellerStats(session.user.id);
+
+    loadProfile();
+    renderWishlist();
+}
+init();
+
+// Maps a Supabase `products` row to the shape the wishlist renderer expects
+function mapProductRow(p) {
+    return { id: p.id, name: p.name, category: p.category, price: parseFloat(p.price), image: p.image };
+}
+
+async function fetchRealProfile(userId) {
+    const { data, error } = await sb.from('profiles').select('*').eq('id', userId).single();
+    if (error || !data) return;
+    currentProfile = data;
+
+    const { data: wish } = await sb
+        .from('wishlist')
+        .select('product_id, products(*)')
+        .eq('user_id', userId);
+    realWishlist = (wish || []).filter(w => w.products).map(w => mapProductRow(w.products));
+}
+
+async function fetchRealOrders(userId) {
+    const { data } = await sb.from('orders').select('*').eq('buyer_id', userId).order('created_at', { ascending: false });
+    realOrders = (data || []).map(o => ({
+        id:     o.id,
+        ref:    o.ref,
+        items:  o.items || [],
+        total:  parseFloat(o.total),
+        status: o.status,
+        date:   new Date(o.order_date).toLocaleDateString('en-GB'),
+    }));
+    renderOrders({ orders: realOrders });
+}
+
+async function fetchSellerStats(userId) {
+    const { data: products } = await sb.from('products').select('id').eq('seller_id', userId);
+    const { data: sales }    = await sb.from('sales').select('gross').eq('seller_id', userId);
+    sellerStats = {
+        productCount: (products || []).length,
+        sales: (sales || []).map(s => ({ gross: parseFloat(s.gross) })),
+    };
+}
+
+function loadProfile() {
+    const u = {
+        name:       currentProfile.name,
+        email:      currentProfile.email,
+        phone:      currentProfile.phone,
+        location:   currentProfile.location,
+        bio:        currentProfile.bio,
+        role:       currentProfile.role,
+        profilePic: currentProfile.profile_pic,
+        joinDate:   new Date(currentProfile.join_date).toLocaleDateString('en-GB'),
+        orders:     realOrders,
+    };
+
+    // Avatar
+    document.getElementById('profileAvatar').src = u.profilePic ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=ff6b6b&color=fff&size=200`;
+
+    // Card
+    document.getElementById('displayName').textContent  = u.name  || '—';
+    document.getElementById('displayEmail').textContent = u.email || '—';
+    document.getElementById('displayBio').textContent   = u.bio   || '';
+    document.getElementById('displayJoin').textContent  = u.joinDate ? 'Joined ' + u.joinDate : '';
+
+    // Role badge
+    const badge = document.getElementById('roleBadge');
+    badge.textContent  = u.role === 'seller' ? '🏪 Seller' : '🛍️ Buyer';
+    badge.className    = 'role-badge ' + (u.role === 'seller' ? 'role-seller' : 'role-buyer');
+
+    // Stats
+    const orders   = u.orders   || [];
+    const statsRow = document.getElementById('statsRow');
+    if (u.role === 'buyer') {
+        const spent = orders.reduce((s, o) => s + o.total, 0);
+        statsRow.innerHTML = `
+            <div class="stat"><h4>${orders.length}</h4><p>Orders</p></div>
+            <div class="stat"><h4>${realWishlist.length}</h4><p>Wishlist</p></div>
+            <div class="stat"><h4>GH₵ ${spent.toFixed(0)}</h4><p>Spent</p></div>`;
+    } else {
+        const gross    = sellerStats.sales.reduce((s, x) => s + x.gross, 0);
+        const earnings = gross * 0.95;
+        statsRow.innerHTML = `
+            <div class="stat"><h4>${sellerStats.productCount}</h4><p>Products</p></div>
+            <div class="stat"><h4>${sellerStats.sales.length}</h4><p>Sales</p></div>
+            <div class="stat"><h4>GH₵ ${earnings.toFixed(0)}</h4><p>Earned</p></div>`;
+    }
+
+    // Details
+    document.getElementById('detailName').textContent     = u.name     || '—';
+    document.getElementById('detailEmail').textContent    = u.email    || '—';
+    document.getElementById('detailPhone').textContent    = u.phone    || 'Not set';
+    document.getElementById('detailLocation').textContent = u.location || 'Not set';
+    document.getElementById('detailJoin').textContent     = u.joinDate || '—';
+
+    // Seller card
+    if (u.role === 'seller') {
+        document.getElementById('sellerCard').style.display = 'flex';
+    }
+
+    // Orders section (buyers only)
+    if (u.role === 'buyer') {
+        document.getElementById('ordersSection').style.display = 'block';
+        renderOrders(u);
+    }
+}
+
+function renderOrders(u) {
+    const orders = [...(u.orders || [])].reverse();
+    const el     = document.getElementById('ordersList');
+    if (!orders.length) {
+        el.innerHTML = '<div class="empty-state"><i class="fas fa-shopping-bag"></i><p>No orders yet. Start shopping!</p></div>';
+        return;
+    }
+    el.innerHTML = orders.map(o => `
+        <div class="order-item">
+            <div class="order-header">
+                <div>
+                    <div class="order-id">Order #${String(o.id).slice(-6)}</div>
+                    <div class="order-date">${o.date}</div>
+                </div>
+                <span class="order-status">${o.status || 'Processing'}</span>
+            </div>
+            <div class="order-products">${o.items.map(i => `${i.name} x${i.qty}`).join(', ')}</div>
+            <div class="order-total">Total: GH₵ ${o.total.toFixed(2)}</div>
+            ${o.ref ? `<button onclick="openChat('${o.ref}')" style="margin-top:8px;width:100%;padding:8px;border:1.5px solid var(--primary);background:#fff0f0;color:var(--primary);border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer;"><i class="fas fa-comment-dots"></i> Message Seller</button>` : ''}
+        </div>`).join('');
+}
+
+// ── Avatar upload ──
+// Uploads straight to Supabase Storage (avatars/{uid}/...), then updates
+// the profiles row with the resulting public URL.
+document.getElementById('avatarInput').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file || !currentProfile) return;
+
+    // Instant local preview while the real upload is in flight
+    const reader = new FileReader();
+    reader.onload = ev => { document.getElementById('profileAvatar').src = ev.target.result; };
+    reader.readAsDataURL(file);
+
+    const ext  = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${currentProfile.id}/avatar_${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await sb.storage.from('avatars').upload(path, file, { upsert: true });
+    if (uploadError) { showToast(uploadError.message || 'Could not upload profile picture.'); return; }
+
+    const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(path);
+
+    const { error: updateError } = await sb.from('profiles').update({ profile_pic: publicUrl }).eq('id', currentProfile.id);
+    if (updateError) { showToast('Uploaded, but could not save to your profile.'); return; }
+
+    currentProfile.profile_pic = publicUrl;
+    document.getElementById('profileAvatar').src = publicUrl;
+    showToast('Profile picture updated!');
+});
+
+// ── Edit form ──
+function openEdit() {
+    const u = currentProfile;
+    document.getElementById('editName').value     = u.name     || '';
+    document.getElementById('editPhone').value    = u.phone    || '';
+    document.getElementById('editLocation').value = u.location || '';
+    document.getElementById('editBio').value       = u.bio      || '';
+    document.getElementById('editPassword').value = '';
+    document.getElementById('viewMode').style.display = 'none';
+    document.getElementById('editForm').classList.add('open');
+}
+function closeEdit() {
+    document.getElementById('editForm').classList.remove('open');
+    document.getElementById('viewMode').style.display = 'block';
+}
+async function saveProfile() {
+    const u = currentProfile;
+    const name     = document.getElementById('editName').value.trim()     || u.name;
+    const phone    = document.getElementById('editPhone').value.trim()    || u.phone;
+    const location = document.getElementById('editLocation').value.trim() || u.location;
+    const bio      = document.getElementById('editBio').value.trim();
+    const newPass  = document.getElementById('editPassword').value;
+
+    if (newPass && newPass.length < 6) {
+        showToast('Password must be at least 6 characters.');
+        return;
+    }
+
+    const saveBtn = document.querySelector('#editForm .btn-green');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
+
+    try {
+        const { error } = await sb.from('profiles').update({ name, phone, location, bio }).eq('id', u.id);
+        if (error) { showToast('Could not save profile. Please try again.'); return; }
+
+        if (newPass) {
+            const { error: passErr } = await sb.auth.updateUser({ password: newPass });
+            if (passErr) { showToast('Profile saved, but password change failed: ' + passErr.message); }
+        }
+
+        currentProfile.name = name; currentProfile.phone = phone;
+        currentProfile.location = location; currentProfile.bio = bio;
+
+        closeEdit();
+        loadProfile();
+        showToast('Profile saved!');
+    } catch (err) {
+        showToast('Network error — profile was NOT saved.');
+    } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-check"></i> Save'; }
+    }
+}
+
+// ── Logout ──
+async function logout() {
+    if (confirm('Are you sure you want to log out?')) {
+        await sb.auth.signOut(); // also clears the legacy localStorage mirror via onAuthStateChange
+        showToast('Logged out. Goodbye!');
+        setTimeout(() => window.location.href = 'login.html', 1000);
+    }
+}
+
+
+// ── Wishlist (Supabase-backed) ──
+
+function renderWishlist() {
+    const el = document.getElementById('wishlistItems');
+    if (!el) return;
+
+    // Update profile stats
+    const wishStatEl = document.querySelector('#statsRow .stat:nth-child(2) h4');
+    if (wishStatEl) wishStatEl.textContent = realWishlist.length;
+
+    if (!realWishlist.length) {
+        el.innerHTML = '<div class="empty-state"><i class="fas fa-heart"></i><p>No wishlisted items yet. Tap the ❤️ on any product!</p></div>';
+        return;
+    }
+    el.innerHTML = realWishlist.map(p => `
+        <div class="wishlist-item">
+            ${p.image ? `<img src="${p.image}" alt="${p.name}" onerror="this.style.display='none'">` : '<div style="width:58px;height:58px;background:#f0f0f0;border-radius:10px;"></div>'}
+            <div class="wishlist-item-info">
+                <div class="wishlist-item-name">${p.name}</div>
+                <div class="wishlist-item-cat">${p.category}</div>
+                <div class="wishlist-item-price">GH₵ ${parseFloat(p.price).toFixed(2)}</div>
+            </div>
+            <button class="rm-wishlist" onclick="removeWishlistItem(${p.id})" title="Remove"><i class="fas fa-heart-broken"></i></button>
+        </div>`).join('');
+}
+
+async function removeWishlistItem(id) {
+    if (currentProfile) {
+        const { error } = await sb.from('wishlist').delete().eq('user_id', currentProfile.id).eq('product_id', id);
+        if (error) showToast('Network error — item may not have been removed on the server.');
+    }
+    realWishlist = realWishlist.filter(p => p.id !== id);
+    renderWishlist();
+    showToast('Removed from wishlist.');
+}
+
+// ════════════════════════════════════════════════
+//  CHAT — buyer <-> seller, scoped to one order
+// ════════════════════════════════════════════════
+let currentChatRef = null;
+let chatPollTimer   = null;
+
+async function openChat(ref) {
+    currentChatRef = ref;
+    document.getElementById('chatOrderRef').textContent = ref;
+    document.getElementById('chatOverlay').style.display = 'flex';
+    await loadChatMessages();
+    clearInterval(chatPollTimer);
+    chatPollTimer = setInterval(loadChatMessages, 4000);
+}
+function closeChat() {
+    document.getElementById('chatOverlay').style.display = 'none';
+    clearInterval(chatPollTimer);
+    currentChatRef = null;
+}
+
+async function loadChatMessages() {
+    if (!currentChatRef || !currentProfile) return;
+    try {
+        const { data, error } = await sb
+            .from('messages')
+            .select('*')
+            .eq('order_ref', currentChatRef)
+            .order('created_at', { ascending: true });
+        if (error) return;
+        const el = document.getElementById('chatMessages');
+        el.innerHTML = (data || []).map(m => {
+            const isMine = m.sender_id === currentProfile.id;
+            return `
+            <div style="max-width:80%;align-self:${isMine ? 'flex-end' : 'flex-start'};background:${isMine ? 'var(--primary)' : '#fff'};color:${isMine ? '#fff' : '#333'};border:${isMine ? 'none' : '1px solid #eee'};border-radius:12px;padding:8px 12px;font-size:0.85rem;">
+                ${!isMine ? `<div style="font-size:0.68rem;font-weight:700;opacity:.7;margin-bottom:2px;">${m.sender_name}</div>` : ''}
+                ${m.message}
+            </div>`;
+        }).join('') || '<div class="empty-state"><i class="fas fa-comments"></i><p>Say hello to your seller!</p></div>';
+        el.scrollTop = el.scrollHeight;
+    } catch (_) {}
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    if (!message || !currentChatRef) return;
+    input.value = '';
+    await sb.rpc('send_message', { p_ref: currentChatRef, p_message: message });
+    loadChatMessages();
+}
+document.addEventListener('DOMContentLoaded', () => {
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendChatMessage(); });
+});
+
+// ── Toast ──
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>

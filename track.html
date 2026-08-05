@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Track Order — D-Swift</title>
+<link rel="icon" type="image" href="456.jpeg">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Site chrome (header/footer/cart) -->
+<link rel="stylesheet" href="kstyle.css?v=8">
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+        background:#e9ebee; font-family:'Segoe UI',Arial,sans-serif;
+    }
+    .track-wrap {
+        min-height:60vh; display:flex; align-items:center; justify-content:center;
+        padding:30px 16px;
+    }
+    .card {
+        background:#fff; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.1);
+        width:92%; max-width:460px; overflow:hidden;
+    }
+    .top {
+        background:linear-gradient(135deg,#1325e8,#8f10b7);
+        padding:30px 28px; text-align:center; color:#fff;
+    }
+    .top i { font-size:40px; opacity:.9; }
+    .top h1 { font-size:20px; margin-top:10px; }
+    .top p { font-size:12px; opacity:.85; margin-top:4px; }
+    .body { padding:26px 24px; }
+
+    .order-ref { font-size:13px; color:#888; text-align:center; margin-bottom:18px; }
+    .order-ref b { color:#1d2129; }
+
+    /* Status timeline */
+    .timeline { display:flex; justify-content:space-between; position:relative; margin:0 0 26px; }
+    .timeline::before {
+        content:""; position:absolute; top:14px; left:6%; right:6%; height:3px; background:#eee; z-index:0;
+    }
+    .timeline-fill {
+        position:absolute; top:14px; left:6%; height:3px; background:#1DBF73; z-index:1; transition:width .3s;
+    }
+    .tl-step { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; flex:1; }
+    .tl-dot {
+        width:28px; height:28px; border-radius:50%; background:#eee; color:#aaa;
+        display:flex; align-items:center; justify-content:center; font-size:12px; border:3px solid #fff;
+    }
+    .tl-step.done .tl-dot { background:#1DBF73; color:#fff; }
+    .tl-step.current .tl-dot { background:#1325e8; color:#fff; }
+    .tl-label { font-size:9.5px; color:#999; margin-top:6px; text-align:center; max-width:60px; }
+    .tl-step.done .tl-label, .tl-step.current .tl-label { color:#333; font-weight:600; }
+
+    .section-label { font-size:11px; font-weight:700; color:#999; text-transform:uppercase; letter-spacing:.5px; margin:18px 0 8px; }
+    .info-row { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid #f3f3f3; font-size:13.5px; }
+    .info-row i { color:#8f10b7; width:16px; margin-top:2px; }
+    .info-row .label { color:#888; min-width:64px; }
+    .info-row .val { color:#1d2129; font-weight:600; }
+
+    .items-list { font-size:13px; color:#444; line-height:1.7; }
+    .order-total { text-align:right; font-size:15px; font-weight:700; color:#1325e8; margin-top:8px; }
+
+    .rider-zone {
+        margin-top:22px; padding-top:18px; border-top:1px dashed #ddd;
+    }
+    .rider-zone p { font-size:11.5px; color:#aaa; margin-bottom:10px; text-align:center; }
+    .btn {
+        width:100%; padding:13px; border:none; border-radius:40px;
+        background:linear-gradient(135deg,#1325e8,#8f10b7);
+        color:#fff; font-size:14px; font-weight:700; cursor:pointer;
+        letter-spacing:.3px; transition:.2s;
+    }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+    .btn.done-btn { background:#1DBF73; }
+
+    /* Rider sign-in — replaces the old shared-PIN gate with a real login,
+       since the delivery rider is now an authenticated account instead of
+       a 4-digit PIN. */
+    .rider-input {
+        width:100%; box-sizing:border-box; padding:11px 14px; margin-bottom:8px;
+        border:2px solid #e0e0e0; border-radius:10px; font-size:13.5px;
+        font-family:inherit; color:#1d2129; outline:none; transition:border .2s;
+    }
+    .rider-input:focus { border-color:#8f10b7; }
+    .rider-pin-error { color:#c62828; font-size:12px; margin-top:6px; text-align:center; min-height:16px; }
+
+    .msg { margin-top:12px; padding:10px 14px; border-radius:10px; font-size:13px; text-align:center; display:none; }
+    .msg.success { background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; display:block; }
+    .msg.error   { background:#fce4ec; color:#c62828; border:1px solid #ef9a9a; display:block; }
+
+    .state-box { padding:50px 24px; text-align:center; }
+    .state-box i { font-size:42px; color:#ccc; }
+    .state-box h2 { font-size:16px; color:#444; margin:14px 0 6px; }
+    .state-box p { font-size:13px; color:#999; }
+
+    .footer { text-align:center; padding:14px; font-size:11px; color:#bbb; border-top:1px solid #f0f0f0; }
+</style>
+</head>
+<body>
+    <!-- ══════════════════ DESKTOP HEADER (hidden on mobile) ══════════════════ -->
+    <header class="desktop-header">
+        <div class="header-content">
+            <nav class="nav-links">
+                <a href="login.html" class="profile-icon" id="profileIcon" title="Account">
+                    <i class="fas fa-user-circle"></i>
+                </a>
+                <a href="about.html" >About</a>
+                <div class="cart-icon" id="cartIcon">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count">0</span>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ══════════════════ MOBILE HEADER (hidden on desktop) ══════════════════ -->
+    <div class="mobile-header">
+        <div class="mobile-search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search on Swift">
+        </div>
+        <div class="mobile-cart-icon" id="mobileCartIcon">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="cart-count mobile-cart-count">0</span>
+        </div>
+    </div>
+
+<div class="track-wrap">
+<div class="card">
+    <div class="top">
+        <i class="fas fa-truck-fast"></i>
+        <h1>Track Your Delivery</h1>
+        <p id="topSub">Loading order…</p>
+    </div>
+    <div id="content">
+        <div class="state-box"><i class="fas fa-spinner fa-spin"></i><p>Fetching order details…</p></div>
+    </div>
+    <div class="footer">© 2027 D-Swift &nbsp;•&nbsp; dswift.ltd@gmail.com</div>
+</div>
+</div>
+
+    <!-- ══════════════════ SHOPPING CART PANEL ══════════════════ -->
+    <div class="cart-container" id="cartContainer">
+        <div class="cart-header">
+            <h2>Your Cart</h2>
+            <button class="close-cart" id="closeCart"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="cartItems">
+            <div class="cart-empty">
+                <i class="fas fa-shopping-cart"></i>
+                <p>Your cart is empty</p>
+            </div>
+        </div>
+        <div class="cart-footer">
+            <div class="delivery-note" id="deliveryNote">
+                <i class="fas fa-motorcycle"></i>
+                <span id="deliveryNoteText">We'll deliver to the address on your profile.</span>
+                <a href="profile.html" id="deliveryNoteEdit">Edit</a>
+            </div>
+            <div class="cart-total">
+                <span>Total:</span>
+                <span id="cartTotal">GH₵ 0.00</span>
+            </div>
+            <button class="checkout-btn">Proceed to Checkout</button>
+        </div>
+    </div>
+    <div class="overlay" id="overlay"></div>
+
+    <!-- ══════════════════ DESKTOP FOOTER (hidden on mobile) ══════════════════ -->
+    <footer class="desktop-footer">
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>Swift</h3>
+                <p>Your one-stop destination for all your shopping needs.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="https://x.com/dswiftltd" target="_blank" rel="noopener" aria-label="X (Twitter)"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+                    <a href="https://www.instagram.com/dswiftltd/" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Categories</h3>
+                <ul class="footer-links">
+                    <li><a href="index.html">Fashion</a></li>
+                    <li><a href="index.html">Electronics</a></li>
+                    <li><a href="index.html">Home Goods</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Contact Us</h3>
+                <ul class="footer-links">
+                    <li><i class="fas fa-map-marker-alt"></i> Ho, Volta Region</li>
+                    <li><i class="fas fa-phone"></i> +233 (53) 820-7600</li>
+                    <li><i class="fas fa-envelope"></i> dswift.ltd@gmail.com</li>
+                </ul>
+            </div>
+        </div>
+        <marquee>If you found yourself on this website, it is not a mistake. You are here because you either want to buy or sell. My name is D-swift and I am here to make your shopping easier. Call Us On +233 53-820-7600. Thank You. Nice Shopping.</marquee>
+        <div class="copyright"><p>&copy; 2027 Swift. All rights reserved.</p></div>
+    </footer>
+
+    <!-- ══════════════════ MOBILE BOTTOM NAV (hidden on desktop) ══════════════════ -->
+    <nav class="mobile-bottom-nav">
+        <a href="index.html" class="mob-nav-item">
+            <i class="fas fa-home"></i>
+            <span class="nav-label">Home</span>
+        </a>
+        <a href="#" class="mob-nav-item" id="mobCartBtn">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="nav-label">Cart</span>
+            <span class="mob-nav-badge cart-count mobile-cart-count2">0</span>
+        </a>
+        <a href="#" class="mob-nav-item" id="mobWishBtn" onclick="openWishlistPanel(); return false;">
+            <i class="fas fa-heart"></i>
+            <span class="nav-label">Wishlist</span>
+            <span class="mob-nav-badge" id="wishlistBadge" style="display:none;">0</span>
+        </a>
+        <a href="profile.html" class="mob-nav-item">
+            <i class="fas fa-user"></i>
+            <span class="nav-label">Account</span>
+        </a>
+    </nav>
+
+    <!-- ══════════════════ WISHLIST PANEL ══════════════════ -->
+    <div class="wishlist-panel" id="wishlistPanel">
+        <div class="wishlist-header">
+            <h2><i class="fas fa-heart"></i> My Wishlist</h2>
+            <button class="close-wishlist" id="closeWishlist"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="wishlist-items" id="wishlistItemsList">
+            <div class="cart-empty">
+                <i class="fas fa-heart"></i>
+                <p>Your wishlist is empty</p>
+            </div>
+        </div>
+    </div>
+    <div class="wishlist-overlay" id="wishlistOverlay"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script src="kscript.js"></script>
+
+
+<script>
+const STEPS = [
+    { key:'confirmed',  label:'Confirmed',        icon:'fa-check' },
+    { key:'packed',     label:'Packed',            icon:'fa-box' },
+    { key:'out',        label:'Out for Delivery',  icon:'fa-motorcycle' },
+    { key:'delivered',  label:'Delivered',         icon:'fa-house' }
+];
+
+// Which update_delivery_status() action moves the order INTO each step
+const STEP_TO_ACTION = { packed: 'accept', out: 'dispatch', delivered: 'deliver' };
+
+const params  = new URLSearchParams(window.location.search);
+const REF     = params.get('ref') || '';
+const IS_RIDER = params.get('role') === 'rider';
+
+let currentOrder  = null;
+let riderUnlocked = false; // true once a role='delivery' Supabase session is confirmed
+
+if (!REF) {
+    showInvalid('No tracking code', 'This link is missing an order reference. Please use the link sent to you.');
+} else {
+    init();
+}
+
+async function init() {
+    if (IS_RIDER) await checkRiderSession();
+    await loadOrder();
+}
+
+// Riders now sign in with a real account (role='delivery' in profiles)
+// instead of typing a shared PIN — checks whatever Supabase session is
+// already active in this browser first.
+async function checkRiderSession() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { riderUnlocked = false; return; }
+    const { data: profile } = await sb.from('profiles').select('role').eq('id', session.user.id).single();
+    riderUnlocked = profile?.role === 'delivery';
+}
+
+async function loadOrder() {
+    try {
+        const { data, error } = await sb.rpc('track_order', { p_ref: REF });
+        const row = Array.isArray(data) ? data[0] : data;
+        if (error || !row) {
+            showInvalid('Order not found', error?.message || 'We couldn\'t find an order matching this link.');
+            return;
+        }
+        currentOrder = {
+            ref: row.ref,
+            customerName: row.customer_name,
+            phone: row.phone,
+            address: row.address,
+            items: row.items || [],
+            total: row.total,
+            status: row.status,
+        };
+        render();
+    } catch (err) {
+        showInvalid('Connection error', 'Could not reach the server. Please try again shortly.');
+    }
+}
+
+function render() {
+    const o = currentOrder;
+    document.getElementById('topSub').textContent = `Order #${o.ref}`;
+
+    const stepIndex = STEPS.findIndex(s => s.key === o.status);
+    const idx = stepIndex === -1 ? 0 : stepIndex;
+    const fillPct = (idx / (STEPS.length - 1)) * 88; // matches 6%-94% track inset
+
+    const timelineHtml = `
+        <div class="timeline">
+            <div class="timeline-fill" style="width:${fillPct}%"></div>
+            ${STEPS.map((s,i) => `
+                <div class="tl-step ${i < idx ? 'done' : i === idx ? 'current' : ''}">
+                    <div class="tl-dot"><i class="fas ${i <= idx ? 'fa-check' : s.icon}"></i></div>
+                    <div class="tl-label">${s.label}</div>
+                </div>`).join('')}
+        </div>`;
+
+    const itemsHtml = (o.items || []).map(i => `${i.name} &times;${i.qty}`).join('<br>');
+
+    const nextStep = STEPS[idx + 1];
+    const isDelivered = o.status === 'delivered';
+
+    document.getElementById('content').innerHTML = `
+        <div class="body">
+            ${timelineHtml}
+
+            <div class="section-label">Delivery To</div>
+            <div class="info-row"><i class="fas fa-user"></i><span class="label">Name</span><span class="val">${esc(o.customerName)}</span></div>
+            <div class="info-row"><i class="fas fa-phone"></i><span class="label">Phone</span><span class="val">${esc(o.phone || '—')}</span></div>
+            <div class="info-row"><i class="fas fa-location-dot"></i><span class="label">Address</span><span class="val">${esc(o.address || 'No address on file — contact customer')}</span></div>
+
+            <div class="section-label">Items</div>
+            <div class="items-list">${itemsHtml}</div>
+            <div class="order-total">Total: GH₵ ${Number(o.total).toFixed(2)}</div>
+
+            ${IS_RIDER ? renderRiderZone(isDelivered, nextStep) : ''}
+        </div>`;
+
+    const btn = document.getElementById('advanceBtn');
+    if (btn) btn.addEventListener('click', () => advanceStatus(nextStep.key));
+
+    const loginBtn = document.getElementById('riderLoginBtn');
+    if (loginBtn) loginBtn.addEventListener('click', riderLogin);
+}
+
+function renderRiderZone(isDelivered, nextStep) {
+    if (!riderUnlocked) {
+        // Locked — the delivery rider signs in with their real account
+        // instead of a shared PIN.
+        return `
+            <div class="rider-zone">
+                <p>Delivery rider: sign in to update this order.</p>
+                <input type="email" id="riderEmail" placeholder="Delivery account email" class="rider-input">
+                <input type="password" id="riderPassword" placeholder="Password" class="rider-input">
+                <button class="btn" id="riderLoginBtn"><i class="fas fa-unlock"></i> Sign In</button>
+                <div class="rider-pin-error" id="riderPinError"></div>
+            </div>`;
+    }
+
+    return `
+        <div class="rider-zone">
+            <p>Delivery rider: update the status once you've acted on this order.</p>
+            ${isDelivered
+                ? `<button class="btn done-btn" disabled><i class="fas fa-circle-check"></i> Delivered</button>`
+                : `<button class="btn" id="advanceBtn">
+                     <i class="fas fa-arrow-right"></i> Mark as "${nextStep ? nextStep.label : 'Delivered'}"
+                   </button>`
+            }
+            <div class="msg" id="msg"></div>
+        </div>`;
+}
+
+async function riderLogin() {
+    const email    = document.getElementById('riderEmail').value.trim();
+    const password = document.getElementById('riderPassword').value;
+    const err      = document.getElementById('riderPinError');
+    err.textContent = '';
+
+    if (!email || !password) { err.textContent = 'Enter your delivery account email and password.'; return; }
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) { err.textContent = 'Incorrect email or password.'; return; }
+
+    const { data: profile } = await sb.from('profiles').select('role').eq('id', data.user.id).single();
+    if (profile?.role !== 'delivery') {
+        err.textContent = 'This account is not a delivery account.';
+        await sb.auth.signOut();
+        return;
+    }
+
+    riderUnlocked = true;
+    render();
+}
+
+async function advanceStatus(newStatusKey) {
+    const btn = document.getElementById('advanceBtn');
+    const msg = document.getElementById('msg');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating…';
+
+    const action = STEP_TO_ACTION[newStatusKey];
+    const { error } = await sb.rpc('update_delivery_status', { p_ref: REF, p_action: action, p_fee: null });
+
+    if (error) {
+        msg.className = 'msg error';
+        msg.textContent = error.message || 'Could not update status.';
+        msg.style.display = 'block';
+        btn.disabled = false;
+        render();
+        return;
+    }
+    currentOrder.status = newStatusKey;
+    render();
+}
+
+function showInvalid(title, text) {
+    document.getElementById('topSub').textContent = 'Tracking unavailable';
+    document.getElementById('content').innerHTML = `
+        <div class="state-box">
+            <i class="fas fa-circle-exclamation"></i>
+            <h2>${esc(title)}</h2>
+            <p>${esc(text)}</p>
+        </div>`;
+}
+
+function esc(s) {
+    if (s === undefined || s === null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+</body>
+</html>

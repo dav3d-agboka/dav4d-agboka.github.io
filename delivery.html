@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Swift — Delivery Portal</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+:root{
+  --delivery:#8f10b7; --dlight:#f3e8ff; --daccent:#ffd166;
+  --green:#0ba87e; --red:#ff6b6b; --dark:#1a1a2e; --bg:#f0f2f5;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+body{background:var(--bg);min-height:100vh;padding-bottom:20px;}
+
+/* ── PIN GATE ── */
+#pinGate{
+  position:fixed;inset:0;background:#fff;z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:2rem;text-align:center;
+}
+.pin-icon{
+  width:80px;height:80px;border-radius:50%;
+  background:linear-gradient(135deg,var(--delivery),#5c0e8a);
+  display:flex;align-items:center;justify-content:center;
+  font-size:2rem;color:#fff;margin:0 auto 20px;
+  box-shadow:0 8px 30px rgba(143,16,183,.35);
+}
+#pinGate h2{font-size:1.4rem;color:var(--dark);margin-bottom:8px;}
+#pinGate p{font-size:0.88rem;color:#888;margin-bottom:28px;}
+.pin-inputs{display:flex;gap:12px;justify-content:center;margin-bottom:20px;}
+.pin-input{
+  width:52px;height:60px;border:2px solid #e0e0e0;border-radius:12px;
+  font-size:1.6rem;font-weight:700;text-align:center;outline:none;
+  font-family:inherit;color:var(--dark);transition:border .2s;
+}
+.pin-input:focus{border-color:var(--delivery);}
+.pin-btn{
+  padding:14px 40px;background:linear-gradient(135deg,var(--delivery),#5c0e8a);
+  color:#fff;border:none;border-radius:40px;font-size:1rem;font-weight:700;
+  cursor:pointer;font-family:inherit;letter-spacing:.5px;
+  transition:opacity .2s;
+}
+.pin-btn:hover{opacity:.9;}
+.pin-error{color:var(--red);font-size:.85rem;margin-top:8px;min-height:20px;}
+.pin-hint{font-size:.75rem;color:#ccc;margin-top:14px;}
+
+/* ── TOP BAR ── */
+.top-bar{
+  background:linear-gradient(135deg,var(--delivery),#5c0e8a);
+  color:#fff;padding:14px 18px;display:flex;align-items:center;
+  gap:12px;box-shadow:0 3px 12px rgba(143,16,183,.3);
+  position:sticky;top:0;z-index:100;
+}
+.top-bar-icon{
+  width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+}
+.top-bar h2{font-size:1.05rem;flex:1;}
+.top-bar small{font-size:.72rem;opacity:.75;display:block;}
+.badge-pill{
+  background:#ffd166;color:#1a1a2e;border-radius:20px;
+  padding:3px 10px;font-size:.72rem;font-weight:700;
+}
+
+/* ── STATS STRIP ── */
+.stats-strip{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:10px;padding:14px;
+}
+.stat-card{
+  background:#fff;border-radius:12px;padding:14px 10px;text-align:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+}
+.stat-card h3{font-size:1.3rem;color:var(--dark);}
+.stat-card p{font-size:.7rem;color:#888;margin-top:2px;}
+.stat-card .stat-icon{font-size:1.1rem;margin-bottom:4px;}
+
+/* ── TABS ── */
+.tabs{
+  display:flex;background:#fff;border-bottom:2px solid #f0f0f0;
+  position:sticky;top:66px;z-index:90;
+}
+.tab{
+  flex:1;padding:11px 0;text-align:center;font-size:.82rem;font-weight:600;
+  color:#aaa;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;
+}
+.tab.active{color:var(--delivery);border-bottom-color:var(--delivery);}
+
+/* ── CONTENT ── */
+.tab-panel{display:none;padding:0;}
+.tab-panel.active{display:block;}
+
+/* ── ORDER CARDS ── */
+.orders-list{padding:12px;}
+.order-card{
+  background:#fff;border-radius:16px;margin-bottom:12px;
+  box-shadow:0 3px 12px rgba(0,0,0,.07);overflow:hidden;
+  border-left:4px solid #e0e0e0;transition:border-color .3s;
+}
+.order-card.pending   {border-left-color:var(--daccent);}
+.order-card.accepted  {border-left-color:#4ecdc4;}
+.order-card.delivered {border-left-color:var(--green);}
+
+.order-card-header{
+  padding:14px 16px 10px;display:flex;align-items:flex-start;
+  justify-content:space-between;gap:10px;
+}
+.order-id{font-size:.78rem;font-weight:700;color:var(--dark);}
+.order-date{font-size:.7rem;color:#aaa;margin-top:1px;}
+.status-badge{
+  padding:4px 12px;border-radius:20px;font-size:.68rem;font-weight:700;
+  white-space:nowrap;
+}
+.status-pending   {background:#fff9e6;color:#b07d00;}
+.status-accepted  {background:#e0fdf8;color:#0ba87e;}
+.status-out_for_delivery{background:#e8f0ff;color:#3a5fd9;}
+.status-delivered {background:#e8faf5;color:var(--green);}
+
+.order-section{padding:0 16px 8px;}
+.order-section-title{font-size:.72rem;color:#aaa;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;}
+.order-items-list{font-size:.82rem;color:#555;line-height:1.7;}
+.order-item-row{display:flex;justify-content:space-between;align-items:center;}
+.order-item-row .seller-tag{font-size:.7rem;color:var(--delivery);margin-top:1px;}
+
+.order-buyer-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.buyer-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,#ff6b6b,#ffd166);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;
+}
+.buyer-name{font-size:.88rem;font-weight:600;color:var(--dark);}
+.buyer-phone{font-size:.75rem;color:#888;}
+
+/* Fee input row */
+.fee-row{
+  display:flex;align-items:center;gap:8px;padding:10px 16px;
+  background:#fdf3ff;border-top:1px solid #f0d8ff;
+}
+.fee-row label{font-size:.78rem;color:var(--delivery);font-weight:600;white-space:nowrap;}
+.fee-row input{
+  flex:1;padding:7px 12px;border:1.5px solid #e0c0f8;border-radius:8px;
+  font-size:.88rem;outline:none;font-family:inherit;background:#fff;
+}
+.fee-row input:focus{border-color:var(--delivery);}
+.fee-set-btn{
+  padding:7px 14px;background:var(--delivery);color:#fff;border:none;
+  border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;
+  font-family:inherit;white-space:nowrap;transition:opacity .2s;
+}
+.fee-set-btn:hover{opacity:.85;}
+
+/* Action buttons */
+.order-actions{padding:10px 16px 16px;display:flex;gap:8px;flex-wrap:wrap;}
+.act-btn{
+  flex:1;min-width:90px;padding:9px 12px;border:none;border-radius:10px;
+  font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;
+}
+.act-btn.accept  {background:#e0fdf8;color:#0ba87e;border:1.5px solid #0ba87e;}
+.act-btn.accept:hover{background:#0ba87e;color:#fff;}
+.act-btn.dispatch{background:#e8f0ff;color:#3a5fd9;border:1.5px solid #3a5fd9;}
+.act-btn.dispatch:hover{background:#3a5fd9;color:#fff;}
+.act-btn.deliver {background:#e8faf5;color:var(--green);border:1.5px solid var(--green);}
+.act-btn.deliver:hover{background:var(--green);color:#fff;}
+.act-btn.wa      {background:#e8fbe8;color:#25d366;border:1.5px solid #25d366;}
+.act-btn.wa:hover{background:#25d366;color:#fff;}
+.act-btn.call    {background:#e8f0ff;color:#3a5fd9;border:1.5px solid #3a5fd9;}
+.act-btn.call:hover{background:#3a5fd9;color:#fff;}
+.act-btn.msg     {background:var(--dlight);color:var(--delivery);border:1.5px solid var(--delivery);}
+.act-btn.msg:hover{background:var(--delivery);color:#fff;}
+.act-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Summary row */
+.summary-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 16px;background:#f9f9f9;border-top:1px solid #f0f0f0;
+  font-size:.82rem;
+}
+.summary-row .label{color:#888;}
+.summary-row .val{font-weight:700;color:var(--dark);}
+.summary-row .fee-val{color:var(--delivery);font-weight:700;}
+.summary-row .total-val{color:var(--green);font-weight:700;font-size:.9rem;}
+
+/* ── MESSAGES TAB ── */
+.msg-section{padding:14px;}
+.seller-msg-card{
+  background:#fff;border-radius:14px;margin-bottom:12px;padding:16px;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+}
+.smg-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.smg-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,#ff6b6b,#4ecdc4);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;
+}
+.smg-name{font-size:.9rem;font-weight:700;color:var(--dark);}
+.smg-role{font-size:.72rem;color:#aaa;}
+.smg-bubble{background:#fdf3ff;border-radius:10px;padding:10px 14px;margin-bottom:10px;}
+.smg-bubble p{font-size:.85rem;color:var(--dark);line-height:1.45;}
+.smg-bubble small{font-size:.7rem;color:#bbb;margin-top:4px;display:block;}
+.smg-reply-row{display:flex;gap:8px;}
+.smg-reply-input{
+  flex:1;padding:8px 12px;border:1.5px solid #e0c0f8;border-radius:8px;
+  font-size:.85rem;outline:none;font-family:inherit;
+}
+.smg-reply-input:focus{border-color:var(--delivery);}
+.smg-reply-btn{
+  padding:8px 14px;background:var(--delivery);color:#fff;border:none;
+  border-radius:8px;cursor:pointer;font-size:.85rem;font-family:inherit;
+  transition:opacity .2s;
+}
+.smg-reply-btn:hover{opacity:.85;}
+.no-msgs{text-align:center;padding:40px;color:#ccc;}
+.no-msgs i{font-size:2rem;display:block;margin-bottom:10px;}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:40px 20px;color:#ccc;}
+.empty-state i{font-size:2.5rem;display:block;margin-bottom:12px;}
+.empty-state p{font-size:.85rem;}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(30px);
+  background:var(--dark);color:#fff;padding:10px 22px;border-radius:30px;
+  font-size:.82rem;z-index:9999;opacity:0;transition:all .3s;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media(min-width:601px){body{max-width:600px;margin:0 auto;}}
+</style>
+</head>
+<body>
+
+<!-- ══ SIGN-IN GATE ══ -->
+<div id="pinGate">
+  <div class="pin-icon"><i class="fas fa-motorcycle"></i></div>
+  <h2>Delivery Portal</h2>
+  <p>Sign in with your D-Swift delivery account</p>
+  <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
+    <input type="email" id="deliveryEmail" placeholder="Delivery account email"
+           style="padding:13px 16px;border:2px solid #e0e0e0;border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;">
+    <input type="password" id="deliveryPassword" placeholder="Password"
+           style="padding:13px 16px;border:2px solid #e0e0e0;border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;">
+  </div>
+  <button class="pin-btn" onclick="checkPin()"><i class="fas fa-unlock"></i> Enter Dashboard</button>
+  <div class="pin-error" id="pinError"></div>
+  <p class="pin-hint">Delivery accounts are created by D-Swift management</p>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="mainApp" style="display:none;">
+
+  <div class="top-bar">
+    <div class="top-bar-icon"><i class="fas fa-motorcycle"></i></div>
+    <div style="flex:1;">
+      <h2>Delivery Dashboard</h2>
+      <small>D-Swift Delivery Partner</small>
+    </div>
+    <span class="badge-pill" id="newOrderBadge" style="display:none;">0 New</span>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-strip">
+    <div class="stat-card">
+      <div class="stat-icon" style="color:var(--daccent);">📦</div>
+      <h3 id="statPending">0</h3>
+      <p>Pending</p>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="color:#4ecdc4;">🚴</div>
+      <h3 id="statActive">0</h3>
+      <p>Active</p>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="color:var(--green);">✅</div>
+      <h3 id="statDone">0</h3>
+      <p>Delivered</p>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('orders')"><i class="fas fa-box"></i> Orders</div>
+    <div class="tab" onclick="switchTab('active')"><i class="fas fa-motorcycle"></i> Active</div>
+    <div class="tab" onclick="switchTab('done')"><i class="fas fa-check-circle"></i> Done</div>
+    <div class="tab" onclick="switchTab('messages')"><i class="fas fa-comments"></i> Messages</div>
+  </div>
+
+  <div class="tab-panel active" id="tab-orders">
+    <div class="orders-list" id="listPending"></div>
+  </div>
+  <div class="tab-panel" id="tab-active">
+    <div class="orders-list" id="listActive"></div>
+  </div>
+  <div class="tab-panel" id="tab-done">
+    <div class="orders-list" id="listDone"></div>
+  </div>
+  <div class="tab-panel" id="tab-messages">
+    <div class="msg-section" id="msgSection"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+/* ══════════════════════════════════════════════════
+   D-SWIFT  |  delivery.js  (embedded, Supabase version)
+   The delivery rider is now a real authenticated account
+   (profiles.role = 'delivery') instead of a shared PIN —
+   RLS on delivery_orders/messages already checks for that
+   role, so once signed in every query below is naturally
+   scoped correctly.
+   ══════════════════════════════════════════════════ */
+
+let knownRefs    = new Set();       // orders we've already alerted on
+let firstLoad    = true;
+let pollTimer    = null;
+let riderId      = null;
+
+// ── Sign in ────────────────────────────────────────
+async function checkPin() {
+  const email    = document.getElementById('deliveryEmail').value.trim();
+  const password = document.getElementById('deliveryPassword').value;
+  const err      = document.getElementById('pinError');
+  err.textContent = '';
+
+  if (!email || !password) { err.textContent = 'Enter your email and password.'; return; }
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) { err.textContent = 'Incorrect email or password.'; return; }
+
+  const { data: profile } = await sb.from('profiles').select('role').eq('id', data.user.id).single();
+  if (profile?.role !== 'delivery') {
+    err.textContent = 'This account is not a delivery account.';
+    await sb.auth.signOut();
+    return;
+  }
+
+  riderId = data.user.id;
+  document.getElementById('pinGate').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  initDashboard();
+}
+document.addEventListener('DOMContentLoaded', () => {
+  ['deliveryEmail', 'deliveryPassword'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
+  });
+});
+
+// Skip the sign-in gate if already signed in as a delivery account this session
+document.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+  const { data: profile } = await sb.from('profiles').select('role').eq('id', session.user.id).single();
+  if (profile?.role === 'delivery') {
+    riderId = session.user.id;
+    document.getElementById('pinGate').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    initDashboard();
+  }
+});
+
+// ── Data helpers (Supabase) ─────────────────────────
+function mapDeliveryOrderRow(o) {
+  return {
+    ref: o.order_ref, buyerId: o.buyer_id, buyerName: o.buyer_name,
+    buyerPhone: o.buyer_phone, buyerEmail: o.buyer_email, deliveryAddress: o.delivery_address,
+    items: o.items || [], subtotal: parseFloat(o.subtotal),
+    deliveryFee: o.delivery_fee !== null ? parseFloat(o.delivery_fee) : null,
+    status: o.status, createdAt: o.created_at, updatedAt: o.updated_at,
+  };
+}
+
+async function apiGet() {
+  const { data, error } = await sb.from('delivery_orders').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return { orders: (data || []).map(mapDeliveryOrderRow) };
+}
+async function apiPost(body) {
+  const { action, ref, fee } = body;
+  const { error } = await sb.rpc('update_delivery_status', { p_ref: ref, p_action: action, p_fee: fee ?? null });
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+let allOrders = [];
+
+// ── Init ──────────────────────────────────────────
+function initDashboard() {
+  if (Notification && Notification.permission === 'default') Notification.requestPermission();
+  refresh();
+  pollTimer = setInterval(refresh, 5000); // poll every 5s — near-instant without needing a real push server
+}
+
+async function refresh() {
+  try {
+    const data = await apiGet();
+    allOrders = data.orders || [];
+
+    // ── Directly alert the delivery guy the moment a new order lands ──
+    const pendingNow = allOrders.filter(o => o.status === 'pending');
+    if (!firstLoad) {
+      pendingNow.forEach(o => {
+        if (!knownRefs.has(o.ref)) alertNewOrder(o);
+      });
+    }
+    knownRefs = new Set(allOrders.map(o => o.ref));
+    firstLoad = false;
+
+    renderAll();
+    updateStats();
+    if (document.getElementById('tab-messages').classList.contains('active')) {
+      renderMessagesTab();
+    }
+  } catch (err) {
+    // Silent fail on a missed poll — will retry in 5s
+  }
+}
+
+// Fires a real OS-level notification (if permitted) so the rider is
+// directed straight to the order even if the tab is in the background.
+function alertNewOrder(order) {
+  showToast(`🛒 New order #${order.ref}!`);
+  if (Notification && Notification.permission === 'granted') {
+    const n = new Notification('🛒 New D-Swift Order!', {
+      body: `${order.buyerName} — GH₵ ${order.subtotal.toFixed(2)}\nTap to view and accept.`,
+      tag: order.ref
+    });
+    n.onclick = () => {
+      window.focus();
+      switchTab('orders');
+      n.close();
+      setTimeout(() => focusOrderCard(order.ref), 200);
+    };
+  }
+}
+
+// Scrolls to + highlights a specific order card — "directed straight to it"
+function focusOrderCard(ref) {
+  const card = document.getElementById('card-' + ref);
+  if (!card) return;
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.style.transition = 'box-shadow .3s';
+  card.style.boxShadow = '0 0 0 3px var(--delivery)';
+  setTimeout(() => { card.style.boxShadow = ''; }, 2000);
+}
+
+function renderAll() {
+  renderOrderList('listPending', allOrders.filter(o => o.status === 'pending'), 'pending');
+  renderOrderList('listActive',  allOrders.filter(o => o.status === 'accepted' || o.status === 'out_for_delivery'), 'active');
+  renderOrderList('listDone',    allOrders.filter(o => o.status === 'delivered'), 'done');
+}
+
+function updateStats() {
+  const pending = allOrders.filter(o=>o.status==='pending').length;
+  const active  = allOrders.filter(o=>o.status==='accepted'||o.status==='out_for_delivery').length;
+  const done    = allOrders.filter(o=>o.status==='delivered').length;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statActive').textContent  = active;
+  document.getElementById('statDone').textContent    = done;
+
+  const badge = document.getElementById('newOrderBadge');
+  if (pending > 0) { badge.textContent = pending+' New'; badge.style.display=''; }
+  else badge.style.display='none';
+}
+
+function renderOrderList(elId, orders, mode) {
+  const el = document.getElementById(elId);
+  if (!orders.length) {
+    el.innerHTML = `<div class="empty-state">
+      <i class="fas fa-${mode==='done'?'check-circle':mode==='active'?'motorcycle':'box'}"></i>
+      <p>${mode==='pending'?'No new orders yet.<br>New orders appear here automatically.':mode==='active'?'No active deliveries.':'No completed deliveries yet.'}</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = orders.slice().reverse().map(o => buildOrderCard(o)).join('');
+}
+
+function buildOrderCard(o) {
+  const statusLabel = {pending:'New Order',accepted:'Accepted',out_for_delivery:'Out for Delivery',delivered:'Delivered'}[o.status] || o.status;
+  const buyerInitial = (o.buyerName||'?').charAt(0).toUpperCase();
+  const itemsHtml = (o.items||[]).map(i=>`
+    <div class="order-item-row">
+      <span>${escHtml(i.name)} &times; ${i.qty}</span>
+      <span style="color:#888;font-size:.78rem;">GH₵ ${(i.price*i.qty).toFixed(2)}</span>
+    </div>
+    <div class="order-item-row"><span class="seller-tag"><i class="fas fa-store"></i> ${escHtml(i.sellerName||'D-Swift')}</span></div>
+  `).join('');
+
+  const feeSet = o.deliveryFee != null;
+  const feeDisplay = feeSet ? `GH₵ ${parseFloat(o.deliveryFee).toFixed(2)}` : 'Not set';
+  const total = (parseFloat(o.subtotal)||0) + (feeSet ? parseFloat(o.deliveryFee) : 0);
+
+  // Action buttons based on status
+  let actionBtns = '';
+  if (o.status === 'pending') {
+    actionBtns += `<button class="act-btn accept" onclick="setStatus('${o.ref}','accept')"><i class="fas fa-check"></i> Accept</button>`;
+  }
+  if (o.status === 'accepted') {
+    actionBtns += `<button class="act-btn dispatch" onclick="setStatus('${o.ref}','dispatch')"><i class="fas fa-motorcycle"></i> Dispatch</button>`;
+  }
+  if (o.status === 'out_for_delivery') {
+    actionBtns += `<button class="act-btn deliver" onclick="setStatus('${o.ref}','deliver')"><i class="fas fa-flag-checkered"></i> Mark Delivered</button>`;
+  }
+  if (o.buyerPhone) {
+    actionBtns += `<button class="act-btn wa" onclick="waContact('${o.buyerPhone}','${escHtml(o.buyerName||'')}','${o.ref}')"><i class="fab fa-whatsapp"></i> WhatsApp</button>`;
+    actionBtns += `<button class="act-btn call" onclick="callContact('${o.buyerPhone}')"><i class="fas fa-phone"></i> Call</button>`;
+  }
+
+  // Seller contact buttons
+  const sellerBtns = getSellerContactBtns(o);
+
+  return `
+  <div class="order-card ${o.status}" id="card-${o.ref}">
+    <div class="order-card-header">
+      <div>
+        <div class="order-id"><i class="fas fa-hashtag" style="font-size:.7rem;"></i> ${o.ref}</div>
+        <div class="order-date">${new Date(o.createdAt||Date.now()).toLocaleString()}</div>
+      </div>
+      <span class="status-badge status-${o.status}">${statusLabel}</span>
+    </div>
+
+    <div class="order-section">
+      <div class="order-section-title">Buyer</div>
+      <div class="order-buyer-row">
+        <div class="buyer-avatar">${buyerInitial}</div>
+        <div>
+          <div class="buyer-name">${escHtml(o.buyerName||'—')}</div>
+          <div class="buyer-phone">${o.buyerPhone||'No phone'} &bull; ${escHtml(o.buyerEmail||'')}</div>
+        </div>
+      </div>
+    </div>
+
+    ${o.deliveryAddress ? `<div class="order-section"><div class="order-section-title">Delivery Address</div><div style="font-size:.85rem;color:var(--dark);"><i class="fas fa-map-marker-alt" style="color:var(--red);margin-right:6px;"></i>${escHtml(o.deliveryAddress)}</div></div>` : ''}
+
+    <div class="order-section">
+      <div class="order-section-title">Items</div>
+      <div class="order-items-list">${itemsHtml}</div>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-row">
+      <span class="label">Subtotal</span><span class="val">GH₵ ${parseFloat(o.subtotal||0).toFixed(2)}</span>
+    </div>
+    <div class="summary-row">
+      <span class="label">Delivery Fee</span>
+      <span class="fee-val">${feeDisplay}</span>
+    </div>
+    ${feeSet ? `<div class="summary-row"><span class="label">Total (buyer pays)</span><span class="total-val">GH₵ ${total.toFixed(2)}</span></div>` : ''}
+
+    <!-- Set fee -->
+    ${o.status !== 'delivered' ? `
+    <div class="fee-row">
+      <label><i class="fas fa-tag"></i> Set Fee (GH₵):</label>
+      <input type="number" id="fee-${o.ref}" value="${o.deliveryFee||''}" placeholder="e.g. 15" min="0" step="0.50">
+      <button class="fee-set-btn" onclick="setFee('${o.ref}')">Set</button>
+    </div>` : ''}
+
+    <!-- Actions -->
+    <div class="order-actions">
+      ${actionBtns}
+      ${sellerBtns}
+    </div>
+  </div>`;
+}
+
+function getSellerContactBtns(order) {
+  const seen = new Set();
+  let html = '';
+  (order.items||[]).forEach(item => {
+    if (item.sellerId && !seen.has(item.sellerId)) {
+      seen.add(item.sellerId);
+      const sName = escHtml(item.sellerName||'Seller');
+      const sPhone = item.sellerPhone || '';
+      if (sPhone) {
+        html += `<button class="act-btn msg" onclick="waContact('${sPhone}','${sName}','')">
+          <i class="fab fa-whatsapp"></i> ${sName}
+        </button>`;
+      }
+    }
+  });
+  return html;
+}
+
+// ── Actions ───────────────────────────────────────
+async function setStatus(ref, action) {
+  const labels = { accept: 'accepted', dispatch: 'out_for_delivery', deliver: 'delivered' };
+  const res = await apiPost({ action, ref });
+  if (res.error) { showToast(res.error); return; }
+  await refresh();
+  showToast(`Order ${(labels[action]||action).replace(/_/g,' ')}!`);
+}
+
+async function setFee(ref) {
+  const input = document.getElementById('fee-' + ref);
+  if (!input) return;
+  const fee = parseFloat(input.value);
+  if (isNaN(fee) || fee < 0) { showToast('Enter a valid fee!'); return; }
+
+  const res = await apiPost({ action: 'setFee', ref, fee });
+  if (res.error) { showToast(res.error); return; }
+  await refresh();
+  showToast(`Delivery fee set to GH₵ ${fee.toFixed(2)}`);
+}
+
+// ── WhatsApp / Call — the rider's own quick-contact tools ──
+function waContact(phone, name, ref) {
+  const msg = ref
+    ? `Hello ${name}, I am the D-Swift delivery partner. Regarding your order #${ref}.`
+    : `Hello ${name}, this is D-Swift Delivery.`;
+  window.open(`https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+function callContact(phone) {
+  window.location.href = 'tel:' + phone;
+}
+
+// ── Tab switching ─────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['orders','active','done','messages'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p =>
+    p.classList.toggle('active', p.id === 'tab-' + name));
+
+  if (name === 'messages') {
+    renderMessagesTab();
+    startMessagesPolling();
+  } else {
+    stopMessagesPolling();
+  }
+}
+
+// ════════════════════════════════════════════════
+//  MESSAGES TAB
+//  One thread per order (same ref buyers/sellers already chat on).
+//  Talks to api/delivery_messages.php — PIN-gated, no login needed.
+// ════════════════════════════════════════════════
+let expandedMsgRef  = null; // which order's thread is currently open
+let msgThreadCache  = {};   // ref -> messages[] (last fetched)
+let msgPollTimer    = null;
+
+function renderMessagesTab() {
+  const el = document.getElementById('msgSection');
+  if (!allOrders.length) {
+    el.innerHTML = `<div class="no-msgs"><i class="fas fa-comments"></i><p>No orders yet — message threads appear here once orders come in.</p></div>`;
+    return;
+  }
+
+  el.innerHTML = allOrders.slice().reverse().map(o => {
+    const buyerInitial = (o.buyerName || '?').charAt(0).toUpperCase();
+    const isOpen = expandedMsgRef === o.ref;
+    const cached = msgThreadCache[o.ref] || [];
+    const lastMsg = cached.length ? cached[cached.length - 1] : null;
+
+    return `
+    <div class="seller-msg-card" id="msgcard-${o.ref}">
+      <div class="smg-header" style="cursor:pointer;" onclick="toggleMsgThread('${o.ref}')">
+        <div class="smg-avatar">${buyerInitial}</div>
+        <div style="flex:1;">
+          <div class="smg-name">${escHtml(o.buyerName || '—')} <span style="color:#bbb;font-weight:400;">· #${o.ref}</span></div>
+          <div class="smg-role">${lastMsg ? escHtml(lastMsg.senderName) + ': ' + escHtml(lastMsg.message.slice(0,50)) : 'No messages yet — tap to open'}</div>
+        </div>
+        <i class="fas ${isOpen ? 'fa-chevron-up' : 'fa-chevron-down'}" style="color:#ccc;"></i>
+      </div>
+      <div id="msgthread-${o.ref}" style="display:${isOpen ? 'block' : 'none'};margin-top:12px;">
+        <div id="msgbubbles-${o.ref}" style="max-height:260px;overflow-y:auto;margin-bottom:10px;"></div>
+        <div class="smg-reply-row">
+          <input type="text" class="smg-reply-input" id="msginput-${o.ref}"
+                 placeholder="Message the buyer & seller…"
+                 onkeydown="if(event.key==='Enter'){sendDeliveryMessage('${o.ref}');}">
+          <button class="smg-reply-btn" onclick="sendDeliveryMessage('${o.ref}')"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if (expandedMsgRef) loadMsgThread(expandedMsgRef);
+}
+
+function toggleMsgThread(ref) {
+  expandedMsgRef = (expandedMsgRef === ref) ? null : ref;
+  renderMessagesTab();
+}
+
+async function loadMsgThread(ref) {
+  try {
+    const { data, error } = await sb
+      .from('messages')
+      .select('*')
+      .eq('order_ref', ref)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    msgThreadCache[ref] = (data || []).map(m => ({
+      senderName: m.sender_name, message: m.message,
+      isMine: m.sender_id === riderId, createdAt: m.created_at,
+    }));
+  } catch (_) { /* keep whatever was cached */ }
+  renderMsgBubbles(ref);
+}
+
+function renderMsgBubbles(ref) {
+  const el = document.getElementById('msgbubbles-' + ref);
+  if (!el) return;
+  const msgs = msgThreadCache[ref] || [];
+  if (!msgs.length) {
+    el.innerHTML = `<div class="no-msgs" style="padding:16px;"><i class="fas fa-comment-dots"></i><p style="font-size:.8rem;">Say hello — the buyer and seller will see it here.</p></div>`;
+    return;
+  }
+  el.innerHTML = msgs.map(m => `
+    <div class="smg-bubble" style="${m.isMine ? 'background:#e8dcff;' : ''}">
+      <p><b style="font-weight:700;">${escHtml(m.senderName)}:</b> ${escHtml(m.message)}</p>
+      <small>${new Date(m.createdAt).toLocaleString()}</small>
+    </div>`).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function sendDeliveryMessage(ref) {
+  const input = document.getElementById('msginput-' + ref);
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  const { error } = await sb.rpc('send_message', { p_ref: ref, p_message: text });
+  if (error) { showToast(error.message); return; }
+  await loadMsgThread(ref);
+}
+
+function startMessagesPolling() {
+  stopMessagesPolling();
+  msgPollTimer = setInterval(() => {
+    if (expandedMsgRef) loadMsgThread(expandedMsgRef);
+  }, 4000);
+}
+function stopMessagesPolling() {
+  if (msgPollTimer) { clearInterval(msgPollTimer); msgPollTimer = null; }
+}
+
+// ── Util ──────────────────────────────────────────
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>

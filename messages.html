@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Swift — Messages</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+:root {
+  --primary:#ff6b6b; --secondary:#4ecdc4;
+  --dark:#1a1a2e; --accent:#ffd166;
+  --green:#0ba87e; --bg:#f0f2f5;
+  --delivery:#8f10b7;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+body{background:var(--bg);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+
+/* ── TOP BAR ── */
+.top-bar{
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  color:#fff;padding:13px 16px;display:flex;align-items:center;
+  gap:12px;flex-shrink:0;box-shadow:0 2px 10px rgba(0,0,0,.15);
+  position:relative;z-index:10;
+}
+.top-bar a{color:#fff;font-size:1.2rem;text-decoration:none;flex-shrink:0;}
+.top-bar h2{font-size:1.05rem;flex:1;}
+.top-bar .unread-badge{
+  background:#fff;color:var(--primary);border-radius:20px;
+  padding:2px 10px;font-size:0.75rem;font-weight:700;
+}
+
+/* ── LAYOUT ── */
+.chat-layout{display:flex;flex:1;overflow:hidden;}
+
+/* ── THREAD LIST ── */
+.thread-list{
+  width:320px;background:#fff;border-right:1px solid #e8e8e8;
+  display:flex;flex-direction:column;flex-shrink:0;
+}
+.tl-header{padding:14px 16px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;}
+.tl-header h3{font-size:0.95rem;color:var(--dark);}
+.tl-search{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
+.tl-search input{
+  width:100%;padding:8px 14px 8px 36px;border:1.5px solid #e8e8e8;
+  border-radius:20px;font-size:0.85rem;outline:none;background:#f8f8f8;
+  font-family:inherit;transition:border .2s;
+}
+.tl-search input:focus{border-color:var(--primary);background:#fff;}
+.tl-search{position:relative;}
+.tl-search i{position:absolute;left:22px;top:50%;transform:translateY(-50%);color:#bbb;font-size:0.85rem;}
+.tl-scroll{flex:1;overflow-y:auto;}
+.thread-item{
+  display:flex;gap:12px;padding:13px 16px;cursor:pointer;
+  border-bottom:1px solid #f8f8f8;transition:background .15s;align-items:flex-start;
+}
+.thread-item:hover{background:#fafafa;}
+.thread-item.active{background:#fff5f5;}
+.thread-avatar{
+  width:46px;height:46px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;font-weight:700;color:#fff;
+}
+.thread-info{flex:1;min-width:0;}
+.thread-name{font-size:0.9rem;font-weight:600;color:var(--dark);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.thread-product{font-size:0.72rem;color:var(--primary);margin:1px 0;}
+.thread-last{font-size:0.78rem;color:#888;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.thread-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.thread-time{font-size:0.7rem;color:#bbb;}
+.thread-unread{
+  background:var(--primary);color:#fff;border-radius:50%;
+  width:18px;height:18px;font-size:0.65rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.delivery-chip{
+  display:inline-flex;align-items:center;gap:4px;background:#f3e8ff;
+  color:var(--delivery);font-size:0.65rem;font-weight:700;
+  padding:2px 8px;border-radius:10px;margin-top:2px;
+}
+
+/* ── NEW CHAT BTN ── */
+.new-chat-btn{
+  margin:12px;padding:10px;background:linear-gradient(135deg,var(--primary),var(--secondary));
+  color:#fff;border:none;border-radius:10px;font-size:0.88rem;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  font-family:inherit;transition:opacity .2s;
+}
+.new-chat-btn:hover{opacity:.9;}
+
+/* ── EMPTY THREAD LIST ── */
+.tl-empty{padding:40px 20px;text-align:center;color:#ccc;}
+.tl-empty i{font-size:2.5rem;display:block;margin-bottom:10px;}
+.tl-empty p{font-size:0.85rem;}
+
+/* ── CONVERSATION PANEL ── */
+.conv-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* No conversation selected */
+.conv-empty{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;color:#ccc;text-align:center;padding:20px;
+}
+.conv-empty i{font-size:3.5rem;margin-bottom:16px;}
+.conv-empty h3{color:#aaa;margin-bottom:8px;font-size:1.1rem;}
+.conv-empty p{font-size:0.85rem;}
+
+/* Conv header */
+.conv-header{
+  background:#fff;padding:12px 16px;border-bottom:1px solid #e8e8e8;
+  display:flex;align-items:center;gap:12px;flex-shrink:0;
+  box-shadow:0 1px 4px rgba(0,0,0,.05);
+}
+.conv-avatar{
+  width:40px;height:40px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;color:#fff;
+  font-size:0.95rem;font-weight:700;flex-shrink:0;
+}
+.conv-header-info{flex:1;min-width:0;}
+.conv-header-name{font-size:0.95rem;font-weight:700;color:var(--dark);}
+.conv-header-sub{font-size:0.75rem;color:#aaa;}
+.conv-header-actions{display:flex;gap:8px;}
+.hdr-btn{
+  width:34px;height:34px;border-radius:50%;border:none;background:#f5f5f5;
+  color:#666;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:0.88rem;transition:all .2s;
+}
+.hdr-btn:hover{background:var(--primary);color:#fff;}
+
+/* Messages area */
+.messages-area{
+  flex:1;overflow-y:auto;padding:16px;
+  display:flex;flex-direction:column;gap:6px;
+  background:#f0f2f5;
+}
+.msg-date-divider{
+  text-align:center;margin:10px 0;font-size:0.72rem;color:#aaa;
+  display:flex;align-items:center;gap:8px;
+}
+.msg-date-divider::before,.msg-date-divider::after{
+  content:'';flex:1;height:1px;background:#e0e0e0;
+}
+.msg-bubble{
+  max-width:68%;display:flex;flex-direction:column;
+}
+.msg-bubble.mine{align-self:flex-end;align-items:flex-end;}
+.msg-bubble.theirs{align-self:flex-start;align-items:flex-start;}
+.bubble-text{
+  padding:9px 13px;border-radius:14px;font-size:0.88rem;
+  line-height:1.45;word-break:break-word;position:relative;
+}
+.mine .bubble-text{
+  background:linear-gradient(135deg,var(--primary),#ff8e53);
+  color:#fff;border-bottom-right-radius:4px;
+}
+.theirs .bubble-text{
+  background:#fff;color:var(--dark);border-bottom-left-radius:4px;
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
+}
+.delivery-msg .bubble-text{
+  background:linear-gradient(135deg,#8f10b7,#5c0e8a);
+}
+.bubble-meta{
+  font-size:0.65rem;color:#bbb;margin-top:2px;
+  display:flex;align-items:center;gap:4px;
+}
+.mine .bubble-meta{color:rgba(255,255,255,.7);}
+.bubble-meta .ticks{color:#4ecdc4;}
+.sender-name{font-size:0.7rem;color:var(--primary);font-weight:600;margin-bottom:2px;}
+
+/* System message */
+.sys-msg{
+  text-align:center;font-size:0.75rem;color:#aaa;
+  background:#e8e8e8;border-radius:10px;padding:5px 14px;
+  align-self:center;max-width:80%;
+}
+
+/* Input area */
+.msg-input-area{
+  background:#fff;padding:12px 14px;border-top:1px solid #e8e8e8;
+  display:flex;gap:10px;align-items:flex-end;flex-shrink:0;
+}
+.msg-input-wrap{
+  flex:1;background:#f5f5f5;border-radius:22px;
+  display:flex;align-items:flex-end;padding:0 14px;
+  border:1.5px solid transparent;transition:border .2s;
+}
+.msg-input-wrap:focus-within{border-color:var(--primary);background:#fff;}
+.msg-input{
+  flex:1;border:none;background:transparent;padding:10px 0;
+  font-size:0.9rem;outline:none;font-family:inherit;
+  resize:none;max-height:100px;line-height:1.4;
+}
+.send-btn{
+  width:44px;height:44px;border-radius:50%;border:none;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  color:#fff;font-size:1rem;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;flex-shrink:0;
+  transition:transform .15s,opacity .2s;
+}
+.send-btn:hover{opacity:.9;}
+.send-btn:active{transform:scale(.92);}
+
+/* ── NEW CHAT MODAL ── */
+#newChatModal{
+  display:none;position:fixed;inset:0;z-index:3000;
+  align-items:center;justify-content:center;
+}
+#newChatModal.open{display:flex;}
+.modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);}
+.modal-box{
+  position:relative;background:#fff;border-radius:18px;
+  width:90%;max-width:440px;padding:26px;z-index:1;
+  box-shadow:0 16px 50px rgba(0,0,0,.2);
+  animation:popIn .25s ease;
+}
+@keyframes popIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-box h3{font-size:1.1rem;color:var(--dark);margin-bottom:6px;}
+.modal-box p{font-size:0.82rem;color:#888;margin-bottom:18px;}
+.modal-close{
+  position:absolute;top:14px;right:16px;background:none;border:none;
+  font-size:1.2rem;cursor:pointer;color:#aaa;
+}
+.seller-pick-list{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+.seller-pick-item{
+  display:flex;align-items:center;gap:12px;padding:12px;
+  border:1.5px solid #e8e8e8;border-radius:12px;cursor:pointer;
+  transition:all .2s;
+}
+.seller-pick-item:hover{border-color:var(--primary);background:#fff5f5;}
+.seller-pick-avatar{
+  width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));
+  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1rem;
+}
+.seller-pick-info h4{font-size:0.9rem;color:var(--dark);}
+.seller-pick-info p{font-size:0.75rem;color:#aaa;}
+.delivery-pick-item{
+  display:flex;align-items:center;gap:12px;padding:12px;
+  border:1.5px solid #e8e8e8;border-radius:12px;cursor:pointer;
+  transition:all .2s;background:#fdf3ff;
+}
+.delivery-pick-item:hover{border-color:var(--delivery);}
+.delivery-pick-avatar{
+  width:42px;height:42px;border-radius:50%;
+  background:linear-gradient(135deg,#8f10b7,#5c0e8a);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;
+}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(30px);
+  background:var(--dark);color:#fff;padding:10px 22px;border-radius:30px;
+  font-size:0.82rem;z-index:9999;opacity:0;transition:all .3s;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── NOT LOGGED IN ── */
+.gate{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:100vh;text-align:center;padding:2rem;
+  background:var(--bg);
+}
+.gate i{font-size:4rem;color:#ddd;margin-bottom:1rem;}
+.gate h2{color:var(--dark);margin-bottom:.5rem;}
+.gate p{color:#888;margin-bottom:1.5rem;font-size:.9rem;}
+.gate a{background:var(--primary);color:#fff;padding:12px 30px;
+  border-radius:30px;text-decoration:none;font-weight:600;}
+
+/* ── MOBILE ── */
+@media(max-width:640px){
+  .thread-list{
+    width:100%;position:absolute;top:0;left:0;right:0;bottom:0;
+    z-index:5;background:#fff;transition:transform .3s;
+  }
+  .thread-list.hidden{transform:translateX(-100%);}
+  .conv-panel{width:100%;}
+  .back-mobile{display:flex!important;}
+  .msg-bubble{max-width:82%;}
+}
+.back-mobile{display:none;background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<!-- NOT LOGGED IN GATE -->
+<div class="gate" id="gate" style="display:none;">
+  <i class="fas fa-comments"></i>
+  <h2>Messages</h2>
+  <p>Please log in to view your messages.</p>
+  <a href="login.html"><i class="fas fa-sign-in-alt"></i> Login</a>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div id="appWrap" style="display:flex;flex-direction:column;height:100vh;">
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <button class="back-mobile" id="backMobile" onclick="showThreadList()" style="display:none;"><i class="fas fa-arrow-left"></i></button>
+    <a href="index.html"><i class="fas fa-home"></i></a>
+    <h2 id="topBarTitle">Messages</h2>
+    <span class="unread-badge" id="globalUnread" style="display:none;">0</span>
+  </div>
+
+  <div class="chat-layout">
+
+    <!-- ══ THREAD LIST ══ -->
+    <div class="thread-list" id="threadList">
+      <div class="tl-header">
+        <h3>All Conversations</h3>
+      </div>
+      <div class="tl-search">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Search conversations…" oninput="filterThreads(this.value)">
+      </div>
+      <div class="tl-scroll" id="threadScroll">
+        <!-- threads injected here -->
+      </div>
+    </div>
+
+    <!-- ══ CONVERSATION PANEL ══ -->
+    <div class="conv-panel" id="convPanel">
+      <div class="conv-empty" id="convEmpty">
+        <i class="fas fa-comments"></i>
+        <h3>Your Messages</h3>
+        <p>Select a conversation or start a new one.</p>
+      </div>
+
+      <!-- Active conversation (hidden until selected) -->
+      <div id="activeConv" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+        <div class="conv-header">
+          <div class="conv-avatar" id="convAvatar">?</div>
+          <div class="conv-header-info">
+            <div class="conv-header-name" id="convName">—</div>
+            <div class="conv-header-sub" id="convSub">—</div>
+          </div>
+          <div class="conv-header-actions">
+            <button class="hdr-btn" id="hdrCallBtn" title="Call" style="display:none;" onclick="callContact()">
+              <i class="fas fa-phone"></i>
+            </button>
+            <button class="hdr-btn" id="hdrWaBtn" title="WhatsApp" onclick="whatsappContact()">
+              <i class="fab fa-whatsapp"></i>
+            </button>
+          </div>
+        </div>
+        <div class="messages-area" id="messagesArea"></div>
+        <div class="msg-input-area">
+          <div class="msg-input-wrap">
+            <textarea class="msg-input" id="msgInput" placeholder="Type a message…" rows="1"
+              onkeydown="handleEnter(event)" oninput="autoResize(this)"></textarea>
+          </div>
+          <button class="send-btn" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+/* ══════════════════════════════════════════════════
+   D-SWIFT  |  messages.js  (embedded, Supabase version)
+   Talks to Supabase directly (get_conversations() RPC,
+   the `messages` table, and send_message() RPC) instead
+   of api/conversations.php + api/messages.php.
+   ══════════════════════════════════════════════════ */
+
+const DELIVERY_PHONE  = '233552767149'; // fixed D-Swift delivery partner
+
+// ── Auth (Supabase) ──────────────────────────────
+let ME = null; // { id, name, email, role, storeName } — filled in by init()
+
+// ── "Seen" tracking (client-side only — no read column server-side yet) ──
+function lastSeen(ref)         { return parseInt(localStorage.getItem('swiftSeen_' + ref) || '0', 10); }
+function markSeen(ref, whenIso){ localStorage.setItem('swiftSeen_' + ref, String(new Date(whenIso || Date.now()).getTime())); }
+
+// ── State ─────────────────────────────────────────
+let activeRef        = null;
+let conversations     = [];   // last data fetched from the server
+let currentMessages   = [];
+
+// ── Init ──────────────────────────────────────────
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    document.getElementById('gate').style.display = 'flex';
+    document.getElementById('appWrap').style.display = 'none';
+    return;
+  }
+
+  const { data: profile, error } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+  if (error || !profile) {
+    document.getElementById('gate').style.display = 'flex';
+    document.getElementById('appWrap').style.display = 'none';
+    return;
+  }
+  ME = { id: profile.id, name: profile.name, email: profile.email, role: profile.role, storeName: profile.store_name };
+
+  await loadConversations();
+
+  // Deep-link support: messages.html?ref=DSWIFT-xxxx opens that thread directly
+  const params = new URLSearchParams(window.location.search);
+  const ref    = params.get('ref');
+  if (ref) openConversation(ref);
+}
+
+// ── Fetch conversation list via the get_conversations() RPC ─────
+async function loadConversations(query) {
+  try {
+    const { data, error } = await sb.rpc('get_conversations');
+    if (error) throw error;
+    conversations = (data || []).map(c => ({
+      ref: c.ref, otherName: c.other_name, otherRole: c.other_role, otherPhone: c.other_phone,
+      productContext: c.product_context, orderStatus: c.order_status, orderDate: c.order_date,
+      lastMessage: c.last_message, lastSenderName: c.last_sender_name, lastMessageAt: c.last_message_at,
+    })).sort((a, b) => new Date(b.lastMessageAt || b.orderDate) - new Date(a.lastMessageAt || a.orderDate));
+  } catch (_) {
+    // Leave whatever we already have rendered rather than blanking the inbox
+  }
+  renderThreadList(query);
+  updateGlobalUnread();
+}
+
+// ── Render thread list ────────────────────────────
+function renderThreadList(query) {
+  const scroll = document.getElementById('threadScroll');
+  let list = conversations;
+
+  if (query) {
+    const q = query.toLowerCase();
+    list = list.filter(c =>
+      c.otherName.toLowerCase().includes(q) ||
+      (c.lastMessage || '').toLowerCase().includes(q) ||
+      (c.productContext || '').toLowerCase().includes(q)
+    );
+  }
+
+  if (!list.length) {
+    scroll.innerHTML = `<div class="tl-empty"><i class="fas fa-comments"></i>
+      <p>${query ? 'No results.' : (ME.role === 'seller'
+          ? 'No orders yet — conversations appear here once a buyer orders from you.'
+          : 'No orders yet — conversations appear here once you place an order.')}</p></div>`;
+    return;
+  }
+
+  scroll.innerHTML = list.map(c => {
+    const bgColor  = avatarColor(c.otherName);
+    const initial  = c.otherName.charAt(0).toUpperCase();
+    const timeStr  = c.lastMessageAt ? formatTime(c.lastMessageAt) : (c.orderDate ? formatTime(c.orderDate) : '');
+    const unread   = c.lastMessage && c.lastSenderName !== ME.name && new Date(c.lastMessageAt).getTime() > lastSeen(c.ref);
+    const productBadge = c.productContext ? `<div class="thread-product"><i class="fas fa-tag" style="font-size:.65rem;"></i> ${escapeHtml(c.productContext)}</div>` : '';
+    const preview  = c.lastMessage ? escapeHtml(c.lastMessage) : '<em style="color:#bbb">No messages yet — say hello</em>';
+    return `
+    <div class="thread-item ${c.ref === activeRef ? 'active' : ''}" onclick="openConversation('${c.ref}')">
+      <div class="thread-avatar" style="background:${bgColor};">${initial}</div>
+      <div class="thread-info">
+        <div class="thread-name">${escapeHtml(c.otherName)}</div>
+        ${productBadge}
+        <div class="thread-last">${preview}</div>
+      </div>
+      <div class="thread-meta">
+        <div class="thread-time">${timeStr}</div>
+        ${unread ? `<div class="thread-unread">•</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function avatarColor(name) {
+  const colors = [
+    'linear-gradient(135deg,#ff6b6b,#ff8e53)',
+    'linear-gradient(135deg,#4ecdc4,#44a08d)',
+    'linear-gradient(135deg,#667eea,#764ba2)',
+    'linear-gradient(135deg,#f093fb,#f5576c)',
+    'linear-gradient(135deg,#4facfe,#00f2fe)',
+    'linear-gradient(135deg,#43e97b,#38f9d7)',
+  ];
+  let sum = 0; for (const c of name) sum += c.charCodeAt(0);
+  return colors[sum % colors.length];
+}
+
+function formatTime(iso) {
+  const d = new Date(iso), now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+// ── Open conversation ─────────────────────────────
+async function openConversation(ref) {
+  activeRef = ref;
+  const c = conversations.find(x => x.ref === ref);
+  if (!c) return;
+
+  const bgColor = avatarColor(c.otherName);
+  const initial = c.otherName.charAt(0).toUpperCase();
+  document.getElementById('convAvatar').style.background = bgColor;
+  document.getElementById('convAvatar').innerHTML = initial;
+  document.getElementById('convName').textContent = c.otherName;
+  document.getElementById('convSub').textContent = c.productContext
+    ? 'Order ' + c.ref + ' — ' + c.productContext
+    : 'Order ' + c.ref;
+
+  const hasPhone = !!toWaPhone(c.otherPhone);
+  document.getElementById('hdrWaBtn').style.display   = hasPhone ? '' : 'none';
+  document.getElementById('hdrCallBtn').style.display = hasPhone ? '' : 'none';
+
+  document.getElementById('convEmpty').style.display = 'none';
+  document.getElementById('activeConv').style.display = 'flex';
+
+  await loadMessages(ref);
+  markSeen(ref, new Date().toISOString());
+  renderThreadList();
+  updateGlobalUnread();
+
+  // Mobile: show conv panel
+  document.getElementById('threadList').classList.add('hidden');
+  document.getElementById('backMobile').style.display = 'flex';
+  document.getElementById('topBarTitle').textContent = c.otherName;
+
+  setTimeout(() => document.getElementById('msgInput').focus(), 100);
+}
+
+// ── Fetch messages for the active order from Supabase ──
+async function loadMessages(ref) {
+  try {
+    const { data, error } = await sb
+      .from('messages')
+      .select('*')
+      .eq('order_ref', ref)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    currentMessages = (data || []).map(m => ({
+      id: m.id, senderRole: m.sender_role, senderName: m.sender_name,
+      message: m.message, isMine: m.sender_id === ME.id, createdAt: m.created_at,
+    }));
+  } catch (_) { currentMessages = []; }
+  renderMessages();
+}
+
+function renderMessages() {
+  const area = document.getElementById('messagesArea');
+  const msgs = currentMessages;
+
+  if (!msgs.length) {
+    area.innerHTML = `<div class="sys-msg" style="margin:auto;">No messages yet — say hello!</div>`;
+    return;
+  }
+
+  let lastDate = '';
+  area.innerHTML = msgs.map(m => {
+    const d = new Date(m.createdAt);
+    const dateStr = d.toLocaleDateString([], { weekday:'long', month:'long', day:'numeric' });
+    let dateDivider = '';
+    if (dateStr !== lastDate) { dateDivider = `<div class="msg-date-divider">${dateStr}</div>`; lastDate = dateStr; }
+
+    const isMine  = !!m.isMine;
+    const time    = d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    const nameTag = !isMine ? `<div class="sender-name">${escapeHtml(m.senderName || 'User')}</div>` : '';
+
+    return dateDivider + `
+    <div class="msg-bubble ${isMine ? 'mine' : 'theirs'}">
+      ${nameTag}
+      <div class="bubble-text">${escapeHtml(m.message)}</div>
+      <div class="bubble-meta">${time}</div>
+    </div>`;
+  }).join('');
+  area.scrollTop = area.scrollHeight;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/\n/g,'<br>');
+}
+
+// ── Send message ──────────────────────────────────
+async function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const text  = input.value.trim();
+  if (!text || !activeRef) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  const { error } = await sb.rpc('send_message', { p_ref: activeRef, p_message: text });
+  if (error) showToast('Message failed to send — check your connection.');
+
+  await loadMessages(activeRef);
+  markSeen(activeRef, new Date().toISOString());
+  await loadConversations();
+}
+
+function handleEnter(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+// ── Normalize a stored phone number into wa.me / tel: format ──
+// wa.me needs digits only, with country code, no leading 0 or +.
+// Numbers are typically saved in local Ghana format (0XXXXXXXXX) at
+// registration, so a leading 0 is swapped for the 233 country code.
+// Already-international numbers (+233… or 233…) pass through untouched.
+function toWaPhone(phone) {
+  if (!phone) return null;
+  let p = String(phone).replace(/[^\d]/g, ''); // strip spaces, dashes, +, etc.
+  if (!p) return null;
+  if (p.startsWith('0')) p = '233' + p.slice(1);
+  return p;
+}
+
+// ── WhatsApp / call the OTHER PARTY in the active conversation ──
+// (the buyer if you're a seller, the seller if you're a buyer) —
+// this used to always ring the D-Swift delivery number regardless of
+// who the conversation was actually with. Delivery has its own contact
+// flow via the checkout success screen / track.html; this button is
+// for talking to the buyer or seller you're actually chatting with.
+function whatsappContact() {
+  const c    = conversations.find(x => x.ref === activeRef);
+  const wa   = c && toWaPhone(c.otherPhone);
+  if (!wa) { showToast("No phone number on file for this contact."); return; }
+  const msg  = `Hello ${c.otherName}, this is ${ME.name} from D-Swift regarding order #${c.ref}.`;
+  window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+function callContact() {
+  const c  = conversations.find(x => x.ref === activeRef);
+  const wa = c && toWaPhone(c.otherPhone);
+  if (!wa) { showToast("No phone number on file for this contact."); return; }
+  window.location.href = 'tel:+' + wa;
+}
+
+// ── Mobile back button ────────────────────────────
+function showThreadList() {
+  document.getElementById('threadList').classList.remove('hidden');
+  document.getElementById('backMobile').style.display = 'none';
+  document.getElementById('topBarTitle').textContent = 'Messages';
+  activeRef = null;
+  document.getElementById('convEmpty').style.display = 'flex';
+  document.getElementById('activeConv').style.display = 'none';
+}
+
+// ── Search ────────────────────────────────────────
+function filterThreads(q) { renderThreadList(q); }
+
+// ── Global unread badge ───────────────────────────
+function updateGlobalUnread() {
+  const total = conversations.filter(c =>
+    c.lastMessage && c.lastSenderName !== ME.name && new Date(c.lastMessageAt).getTime() > lastSeen(c.ref)
+  ).length;
+  const badge = document.getElementById('globalUnread');
+  if (total > 0) { badge.textContent = total; badge.style.display = ''; }
+  else badge.style.display = 'none';
+}
+
+// ── Toast ─────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Poll for new messages / new conversations ─────
+setInterval(() => {
+  if (activeRef) loadMessages(activeRef);
+  loadConversations();
+}, 4000);
+
+// ── Boot ─────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About Us — Swift</title>
+    <link rel="icon" type="image" href="456.jpeg">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <!-- Font Awesome CDN-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Site chrome (header/footer/cart) -->
+    <link rel="stylesheet" href="kstyle.css?v=8" />
+    <!-- Page stylesheet -->
+    <link rel="stylesheet" href="about.css" />
+    <!-- Fallback: guarantees the 3-column team grid + round photos even
+         if about.css doesn't load (wrong path, caching, server hiccup). -->
+    <style>
+      .team-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        row-gap: clamp(24px, 5vw, 44px);
+        column-gap: clamp(10px, 3vw, 24px);
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 10px 16px 50px;
+      }
+      .team-circle {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .circle-img {
+        width: clamp(88px, 22vw, 150px) !important;
+        aspect-ratio: 1 / 1 !important;
+        border-radius: 50% !important;
+        overflow: hidden !important;
+      }
+      .circle-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .team-name, .team-tag { text-align: center; }
+    </style>
+  </head>
+  <body>
+    <!-- ══════════════════ DESKTOP HEADER (hidden on mobile) ══════════════════ -->
+    <header class="desktop-header">
+        <div class="header-content">
+            <nav class="nav-links">
+                <a href="login.html" class="profile-icon" id="profileIcon" title="Account">
+                    <i class="fas fa-user-circle"></i>
+                </a>
+                <a href="about.html" class="active">About</a>
+                <div class="cart-icon" id="cartIcon">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count">0</span>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ══════════════════ MOBILE HEADER (hidden on desktop) ══════════════════ -->
+    <div class="mobile-header">
+        <div class="mobile-search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search on Swift">
+        </div>
+        <div class="mobile-cart-icon" id="mobileCartIcon">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="cart-count mobile-cart-count">0</span>
+        </div>
+    </div>
+
+    <section>
+      <div class="about-section">
+  <h1>About Us</h1>
+  <p>These are the noble people that make our work easier.</p>
+  <p>I give appreciation to all these people. Without them, the job wont be done.</p>
+</div>
+
+<h2 style="text-align:center">Our Team</h2>
+<div class="team-grid">
+  <div class="team-circle">
+    <div class="circle-img">
+      <img src="456.jpeg" alt="Agboka David">
+    </div>
+    <p class="team-name">Agboka David</p>
+    <span class="team-tag">CEO &amp; Founder</span>
+  </div>
+
+  <div class="team-circle">
+    <div class="circle-img">
+      <img src="789.jpg" alt="Increason Eric Delator">
+    </div>
+    <p class="team-name">Increason Eric Delator</p>
+    <span class="team-tag">Web Designer</span>
+  </div>
+
+  <div class="team-circle">
+    <div class="circle-img">
+      <img src="123.jpg" alt="Ali Noel">
+    </div>
+    <p class="team-name">Ali Noel</p>
+    <span class="team-tag">Inspiration</span>
+  </div>
+
+  <!-- Placeholder slots — swap the icon for a real photo + name/title once you have them -->
+  <div class="team-circle">
+    <div class="circle-img placeholder">
+      <i class="fas fa-user-plus"></i>
+    </div>
+    <p class="team-name">Add Teammate</p>
+    <span class="team-tag">Role TBD</span>
+  </div>
+
+  <div class="team-circle">
+    <div class="circle-img placeholder">
+      <i class="fas fa-user-plus"></i>
+    </div>
+    <p class="team-name">Add Teammate</p>
+    <span class="team-tag">Role TBD</span>
+  </div>
+
+  <div class="team-circle">
+    <div class="circle-img placeholder">
+      <i class="fas fa-user-plus"></i>
+    </div>
+    <p class="team-name">Add Teammate</p>
+    <span class="team-tag">Role TBD</span>
+  </div>
+
+</div>
+    </section>
+
+    <!-- ══════════════════ SHOPPING CART PANEL ══════════════════ -->
+    <div class="cart-container" id="cartContainer">
+        <div class="cart-header">
+            <h2>Your Cart</h2>
+            <button class="close-cart" id="closeCart"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items" id="cartItems">
+            <div class="cart-empty">
+                <i class="fas fa-shopping-cart"></i>
+                <p>Your cart is empty</p>
+            </div>
+        </div>
+        <div class="cart-footer">
+            <div class="delivery-note" id="deliveryNote">
+                <i class="fas fa-motorcycle"></i>
+                <span id="deliveryNoteText">We'll deliver to the address on your profile.</span>
+                <a href="profile.html" id="deliveryNoteEdit">Edit</a>
+            </div>
+            <div class="cart-total">
+                <span>Total:</span>
+                <span id="cartTotal">GH₵ 0.00</span>
+            </div>
+            <button class="checkout-btn">Proceed to Checkout</button>
+        </div>
+    </div>
+    <div class="overlay" id="overlay"></div>
+
+    <!-- ══════════════════ DESKTOP FOOTER (hidden on mobile) ══════════════════ -->
+    <footer class="desktop-footer">
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>Swift</h3>
+                <p>Your one-stop destination for all your shopping needs.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="https://x.com/dswiftltd" target="_blank" rel="noopener" aria-label="X (Twitter)"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+                    <a href="https://www.instagram.com/dswiftltd/" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Categories</h3>
+                <ul class="footer-links">
+                    <li><a href="index.html">Fashion</a></li>
+                    <li><a href="index.html">Electronics</a></li>
+                    <li><a href="index.html">Home Goods</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Contact Us</h3>
+                <ul class="footer-links">
+                    <li><i class="fas fa-map-marker-alt"></i> Ho, Volta Region</li>
+                    <li><i class="fas fa-phone"></i> +233 (53) 820-7600</li>
+                    <li><i class="fas fa-envelope"></i> dswift.ltd@gmail.com</li>
+                </ul>
+            </div>
+        </div>
+        <marquee>If you found yourself on this website, it is not a mistake. You are here because you either want to buy or sell. My name is D-swift and I am here to make your shopping easier. Call Us On +233 53-820-7600. Thank You. Nice Shopping.</marquee>
+        <div class="copyright"><p>&copy; 2027 Swift. All rights reserved.</p></div>
+    </footer>
+
+    <!-- ══════════════════ MOBILE BOTTOM NAV (hidden on desktop) ══════════════════ -->
+    <nav class="mobile-bottom-nav">
+        <a href="index.html" class="mob-nav-item">
+            <i class="fas fa-home"></i>
+            <span class="nav-label">Home</span>
+        </a>
+        <a href="#" class="mob-nav-item" id="mobCartBtn">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="nav-label">Cart</span>
+            <span class="mob-nav-badge cart-count mobile-cart-count2">0</span>
+        </a>
+        <a href="#" class="mob-nav-item" id="mobWishBtn" onclick="openWishlistPanel(); return false;">
+            <i class="fas fa-heart"></i>
+            <span class="nav-label">Wishlist</span>
+            <span class="mob-nav-badge" id="wishlistBadge" style="display:none;">0</span>
+        </a>
+        <a href="profile.html" class="mob-nav-item">
+            <i class="fas fa-user"></i>
+            <span class="nav-label">Account</span>
+        </a>
+    </nav>
+
+    <!-- ══════════════════ WISHLIST PANEL ══════════════════ -->
+    <div class="wishlist-panel" id="wishlistPanel">
+        <div class="wishlist-header">
+            <h2><i class="fas fa-heart"></i> My Wishlist</h2>
+            <button class="close-wishlist" id="closeWishlist"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="wishlist-items" id="wishlistItemsList">
+            <div class="cart-empty">
+                <i class="fas fa-heart"></i>
+                <p>Your wishlist is empty</p>
+            </div>
+        </div>
+    </div>
+    <div class="wishlist-overlay" id="wishlistOverlay"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script src="kscript.js"></script>
+
+  </body>
+</html>

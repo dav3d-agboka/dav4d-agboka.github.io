@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signing you in… — Swift</title>
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+        min-height:100vh; display:flex; align-items:center; justify-content:center;
+        background:#e9ebee; font-family:'Segoe UI',Arial,sans-serif; color:#1d2129;
+    }
+    .box { max-width:360px; padding:36px 28px; text-align:center; }
+    .spinner {
+        width:38px; height:38px; margin:0 auto 18px;
+        border:4px solid #eee; border-top-color:#8f10b7; border-radius:50%;
+        animation:spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    p { font-size:15px; color:#555; line-height:1.5; }
+    .back {
+        display:inline-block; margin-top:20px; color:#8f10b7; font-weight:700;
+        text-decoration:none; font-size:14px;
+    }
+</style>
+</head>
+<body>
+<div class="box" id="box">
+    <div class="spinner" id="spinner"></div>
+    <p id="msg">Signing you in…</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+// Supabase's signInWithOAuth() (called from loginscript.js) redirects the
+// provider straight back here with the session encoded in the URL —
+// supabase-client.js's detectSessionInUrl:true already parses that
+// automatically and fires onAuthStateChange. We just wait for it.
+const msgEl  = document.getElementById('msg');
+const boxEl  = document.getElementById('box');
+
+function goBack() {
+    const link = document.createElement('a');
+    link.href = 'login.html';
+    link.className = 'back';
+    link.textContent = 'Back to Login';
+    boxEl.appendChild(link);
+}
+
+function fail(text) {
+    document.getElementById('spinner').style.display = 'none';
+    msgEl.textContent = text;
+    goBack();
+}
+
+(async () => {
+    // Give Supabase a moment to parse the redirect URL and establish the session
+    let session = null;
+    for (let i = 0; i < 10; i++) {
+        const { data } = await sb.auth.getSession();
+        if (data.session) { session = data.session; break; }
+        await new Promise(r => setTimeout(r, 300));
+    }
+
+    if (!session) {
+        fail('Login failed or was cancelled. Please try again.');
+        return;
+    }
+
+    const { data: profile, error } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+    if (error || !profile) {
+        fail('Signed in, but could not load your profile. Please try again.');
+        return;
+    }
+
+    msgEl.textContent = 'Signed in! Redirecting…';
+    setTimeout(() => {
+        window.location.href = profile.role === 'seller' ? 'seller.html' : 'profile.html';
+    }, 700);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Swift — Seller Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <style>
+        :root {
+            --primary: #ff6b6b; --secondary: #4ecdc4;
+            --dark: #1a1a2e; --accent: #ffd166;
+            --green: #0ba87e; --bg: #f0f2f5;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+        body { background:var(--bg); min-height:100vh; padding-bottom:70px; }
+
+        /* TOP BAR */
+        .top-bar { background:linear-gradient(135deg,var(--dark),#2d2d5e); color:white; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 2px 10px rgba(0,0,0,0.2); }
+        .top-bar-left { display:flex; align-items:center; gap:10px; }
+        .top-bar-left img { height:36px; border-radius:6px; }
+        .top-bar h2 { font-size:1rem; }
+        .top-bar small { font-size:0.75rem; opacity:0.75; display:block; }
+        .top-bar-right { display:flex; gap:12px; align-items:center; }
+        .top-bar a { color:white; font-size:1.2rem; text-decoration:none; }
+
+        /* STATS */
+        .stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:16px; }
+        .stat-card { background:white; border-radius:14px; padding:16px; box-shadow:0 3px 12px rgba(0,0,0,0.07); display:flex; flex-direction:column; gap:6px; }
+        .stat-card .stat-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; margin-bottom:4px; }
+        .stat-card h3 { font-size:1.4rem; color:var(--dark); }
+        .stat-card p  { font-size:0.78rem; color:#888; }
+        .stat-card .change { font-size:0.72rem; font-weight:600; }
+        .green-bg  { background:#e8faf5; color:var(--green); }
+        .red-bg    { background:#fff0f0; color:var(--primary); }
+        .blue-bg   { background:#e8f0ff; color:#3a5fd9; }
+        .yellow-bg { background:#fff9e6; color:#e6a817; }
+
+        /* FEE NOTICE */
+        .fee-notice { margin:0 16px 12px; background:linear-gradient(135deg,#fff9e6,#fff3cc); border:1.5px solid var(--accent); border-radius:12px; padding:12px 16px; display:flex; align-items:center; gap:10px; font-size:0.82rem; color:#7a5c00; }
+        .fee-notice i { font-size:1.2rem; color:#e6a817; flex-shrink:0; }
+        .fee-notice strong { color:#5a3e00; }
+
+        /* SECTION */
+        .section { background:white; border-radius:16px; margin:0 16px 14px; padding:18px; box-shadow:0 3px 12px rgba(0,0,0,0.06); }
+        .section-title { font-size:1rem; font-weight:700; color:var(--dark); margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; }
+        .section-title i { color:var(--primary); margin-right:8px; }
+
+        /* FORM */
+        .form-group { margin-bottom:14px; }
+        .form-group label { display:block; font-size:0.78rem; color:#888; margin-bottom:5px; font-weight:600; }
+        .form-group input, .form-group textarea, .form-group select { width:100%; padding:11px 14px; border:1.5px solid #e0e0e0; border-radius:10px; font-size:0.9rem; outline:none; font-family:inherit; transition:border 0.2s; background:white; }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color:var(--primary); }
+        .form-group textarea { resize:vertical; min-height:80px; }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+        /* Image upload */
+        .img-upload-box { border:2px dashed #e0e0e0; border-radius:10px; padding:20px; text-align:center; cursor:pointer; transition:border 0.2s; color:#aaa; font-size:0.85rem; }
+        .img-upload-box:hover { border-color:var(--primary); color:var(--primary); }
+        .img-upload-box i { font-size:2rem; margin-bottom:6px; display:block; }
+        .img-preview { display:none; width:100%; height:160px; object-fit:cover; border-radius:10px; margin-top:8px; }
+        #productImageInput { display:none; }
+        #extraImagesInput  { display:none; }
+
+        /* Extra image previews */
+        .extra-previews { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+        .extra-preview-wrap { position:relative; }
+        .extra-preview-wrap img { width:70px; height:70px; object-fit:cover; border-radius:8px; border:2px solid #e0e0e0; }
+        .extra-preview-wrap .remove-extra { position:absolute; top:-6px; right:-6px; width:20px; height:20px; background:var(--primary); color:white; border:none; border-radius:50%; font-size:0.7rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+
+        /* SUBMIT BTN */
+        .submit-btn { width:100%; padding:13px; background:var(--primary); color:white; border:none; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:background 0.2s; font-family:inherit; }
+        .submit-btn:hover { background:#e05555; }
+
+        /* PRODUCTS LIST */
+        .product-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid #f5f5f5; align-items:center; }
+        .product-item:last-child { border-bottom:none; }
+        .product-item img { width:60px; height:60px; border-radius:10px; object-fit:cover; background:#f0f0f0; flex-shrink:0; }
+        .product-item-info { flex:1; min-width:0; }
+        .product-item-name  { font-weight:600; font-size:0.9rem; color:var(--dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .product-item-cat   { font-size:0.75rem; color:var(--primary); margin:2px 0; }
+        .product-item-price { font-size:0.9rem; font-weight:700; color:var(--dark); }
+        .product-item-fee   { font-size:0.72rem; color:#e6a817; }
+        .product-item-actions { display:flex; gap:8px; flex-shrink:0; }
+        .icon-btn { width:32px; height:32px; border-radius:8px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.85rem; transition:all 0.2s; }
+        .del-btn  { background:#fff0f0; color:var(--primary); }
+        .del-btn:hover { background:var(--primary); color:white; }
+        .edit-btn { background:#e8f0ff; color:#3a5fd9; }
+        .edit-btn:hover { background:#3a5fd9; color:white; }
+
+        /* SALES */
+        .sales-list { display:flex; flex-direction:column; gap:10px; }
+        .sale-item { background:#f8f9fa; border-radius:10px; padding:12px; display:flex; justify-content:space-between; align-items:center; }
+        .sale-item-left .sale-name { font-size:0.88rem; font-weight:600; color:var(--dark); }
+        .sale-item-left .sale-date { font-size:0.72rem; color:#aaa; margin-top:2px; }
+        .sale-item-right { text-align:right; }
+        .sale-gross { font-size:0.9rem; font-weight:700; color:var(--dark); }
+        .sale-fee   { font-size:0.7rem; color:var(--primary); }
+        .sale-net   { font-size:0.85rem; font-weight:700; color:var(--green); }
+
+        /* EMPTY */
+        .empty-state { text-align:center; padding:30px 20px; color:#bbb; }
+        .empty-state i { font-size:2.5rem; margin-bottom:10px; display:block; }
+        .empty-state p { font-size:0.88rem; }
+
+        /* BOTTOM NAV */
+        .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:white; border-top:1px solid #e0e0e0; display:flex; z-index:200; box-shadow:0 -2px 10px rgba(0,0,0,0.08); }
+        .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 2px; text-decoration:none; color:#666; font-size:0.65rem; gap:3px; }
+        .nav-item i { font-size:1.1rem; }
+        .nav-item.active { color:var(--primary); }
+
+        /* TOAST */
+        .toast { position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(30px); background:var(--dark); color:white; padding:10px 22px; border-radius:30px; font-size:0.82rem; z-index:9999; opacity:0; transition:all 0.3s; white-space:nowrap; }
+        .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+        /* TABS */
+        .dash-tabs { display:flex; background:white; border-bottom:2px solid #f0f0f0; position:sticky; top:64px; z-index:90; }
+        .dash-tab { flex:1; padding:12px 0; text-align:center; font-size:0.82rem; font-weight:600; color:#aaa; cursor:pointer; border-bottom:3px solid transparent; transition:all 0.2s; }
+        .dash-tab.active { color:var(--primary); border-bottom-color:var(--primary); }
+        .tab-panel { display:none; }
+        .tab-panel.active { display:block; }
+
+        /* ── EDIT MODAL ── */
+        #editModal {
+            display:none; position:fixed; inset:0; z-index:3000;
+            align-items:flex-end; justify-content:center;
+        }
+        #editModal.open { display:flex; }
+        .edit-backdrop { position:absolute; inset:0; background:rgba(0,0,0,0.55); }
+        .edit-sheet {
+            position:relative; background:white; width:100%; max-width:520px;
+            max-height:90vh; border-radius:24px 24px 0 0;
+            overflow-y:auto; z-index:1;
+            animation: sheetUp 0.3s cubic-bezier(.32,1,.23,1);
+        }
+        @keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+        .edit-sheet-header { padding:18px 18px 0; display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+        .edit-sheet-header h3 { font-size:1.1rem; color:var(--dark); }
+        .edit-close-btn { width:32px; height:32px; border-radius:50%; background:#f0f0f0; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1rem; }
+        .edit-sheet-body { padding:0 18px 24px; display:flex; flex-direction:column; gap:14px; }
+
+        /* Extra images edit row */
+        .edit-extra-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+        .edit-extra-wrap { position:relative; }
+        .edit-extra-wrap img { width:65px; height:65px; object-fit:cover; border-radius:8px; border:2px solid #e0e0e0; }
+        .edit-extra-wrap .rm-edit-extra { position:absolute; top:-5px; right:-5px; width:18px; height:18px; background:var(--primary); color:white; border:none; border-radius:50%; font-size:0.65rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+
+        .edit-save-btn { width:100%; padding:13px; background:var(--green); color:white; border:none; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; font-family:inherit; transition:background 0.2s; }
+        .edit-save-btn:hover { background:#099068; }
+
+        @media (min-width:601px) {
+            body { max-width:600px; margin:0 auto; }
+            .stats-grid { grid-template-columns:repeat(4,1fr); }
+            #editModal { align-items:center; }
+            .edit-sheet { border-radius:20px; max-height:88vh; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+    <div class="top-bar-left">
+        <img src="789.png" alt="Swift" onerror="this.style.display='none'">
+        <div><h2 id="sellerStoreName">My Store</h2><small>Seller Dashboard</small></div>
+    </div>
+    <div class="top-bar-right">
+        <a href="#" id="notifBellBtn" title="Notifications" style="position:relative;">
+            <i class="fas fa-bell"></i>
+            <span id="notifBadge" style="display:none;position:absolute;top:-6px;right:-8px;background:#ff4b2b;color:#fff;font-size:0.6rem;font-weight:700;border-radius:10px;min-width:16px;height:16px;padding:0 4px;display:flex;align-items:center;justify-content:center;"></span>
+        </a>
+        <a href="index.html" title="View Store"><i class="fas fa-store"></i></a>
+        <a href="profile.html" title="Profile"><i class="fas fa-user-circle"></i></a>
+    </div>
+</div>
+
+<!-- DASH TABS -->
+<div class="dash-tabs">
+    <div class="dash-tab active" onclick="switchTab('overview')"><i class="fas fa-chart-pie"></i> Overview</div>
+    <div class="dash-tab" onclick="switchTab('addproduct')"><i class="fas fa-plus"></i> Add Product</div>
+    <div class="dash-tab" onclick="switchTab('myproducts')"><i class="fas fa-box"></i> My Products</div>
+    <div class="dash-tab" onclick="switchTab('sales')"><i class="fas fa-receipt"></i> Sales</div>
+    <div class="dash-tab" onclick="window.location.href='messages.html'"><i class="fas fa-comments"></i> Messages</div>
+</div>
+
+<!-- ══ OVERVIEW TAB ══ -->
+<div class="tab-panel active" id="tab-overview">
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon green-bg"><i class="fas fa-coins"></i></div><h3 id="statEarnings">GH₵ 0</h3><p>Net Earnings</p><span class="change" style="color:var(--green)">After 5% Swift fee</span></div>
+        <div class="stat-card"><div class="stat-icon blue-bg"><i class="fas fa-shopping-cart"></i></div><h3 id="statSales">0</h3><p>Total Sales</p></div>
+        <div class="stat-card"><div class="stat-icon red-bg"><i class="fas fa-box"></i></div><h3 id="statProducts">0</h3><p>Products Listed</p></div>
+        <div class="stat-card"><div class="stat-icon yellow-bg"><i class="fas fa-percentage"></i></div><h3 id="statFee">GH₵ 0</h3><p>Swift Fee Paid</p><span class="change" style="color:#e6a817">5% per sale</span></div>
+    </div>
+    <div class="fee-notice"><i class="fas fa-info-circle"></i><div>D-Swift charges a <strong>5% fee</strong> on every sale. Your earnings shown are already after the fee has been deducted.</div></div>
+    <div class="section">
+        <div class="section-title"><span><i class="fas fa-receipt"></i> Recent Sales</span></div>
+        <div class="sales-list" id="recentSalesList"><div class="empty-state"><i class="fas fa-receipt"></i><p>No sales yet. Start by adding products!</p></div></div>
+    </div>
+</div>
+
+<!-- ══ ADD PRODUCT TAB ══ -->
+<div class="tab-panel" id="tab-addproduct">
+    <div class="section" style="margin-top:16px;">
+        <div class="section-title"><span><i class="fas fa-plus-circle"></i> List a New Product</span></div>
+
+        <div class="form-group"><label>Product Name *</label><input type="text" id="prodName" placeholder="e.g. Nivea Body Lotion"/></div>
+        <div class="form-row">
+            <div class="form-group"><label>Price (GH₵) *</label><input type="number" id="prodPrice" placeholder="0.00" min="0" step="0.01"/></div>
+            <div class="form-group"><label>Category *</label>
+                <select id="prodCategory">
+                    <option value="">Select...</option>
+                    <option>Beauty</option><option>Fashion</option><option>Electronics</option>
+                    <option>Sports</option><option>Home & Kitchen</option><option>Health</option><option>Other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group"><label>Description</label><textarea id="prodDesc" placeholder="Describe your product — materials, size, colour, condition, what's included…"></textarea></div>
+        <div class="form-group"><label>Stock Quantity</label><input type="number" id="prodStock" placeholder="e.g. 10" min="1" value="1"/></div>
+
+        <!-- Main image -->
+        <div class="form-group">
+            <label>Main Product Image</label>
+            <div class="img-upload-box" onclick="document.getElementById('productImageInput').click()">
+                <i class="fas fa-camera"></i>Tap to upload main photo
+            </div>
+            <input type="file" id="productImageInput" accept="image/*"/>
+            <img id="imgPreview" class="img-preview"/>
+        </div>
+
+        <!-- Extra images -->
+        <div class="form-group">
+            <label>Extra Images <span style="font-weight:400;color:#bbb">(optional — up to 5 more photos)</span></label>
+            <div class="img-upload-box" onclick="document.getElementById('extraImagesInput').click()">
+                <i class="fas fa-images"></i>Tap to add more photos
+            </div>
+            <input type="file" id="extraImagesInput" accept="image/*" multiple/>
+            <div class="extra-previews" id="extraPreviews"></div>
+        </div>
+
+        <div class="fee-notice" style="margin:0 0 16px;">
+            <i class="fas fa-calculator"></i>
+            <div id="feePreview">Enter a price to see your earnings after the 5% Swift fee.</div>
+        </div>
+        <span id="prodError" style="color:#ff4b2b;font-size:0.85rem;display:block;margin-bottom:10px;min-height:1.2em;"></span>
+        <button class="submit-btn" onclick="addProduct()"><i class="fas fa-upload"></i> Post Product for Sale</button>
+    </div>
+</div>
+
+<!-- ══ MY PRODUCTS TAB ══ -->
+<div class="tab-panel" id="tab-myproducts">
+    <div class="section" style="margin-top:16px;">
+        <div class="section-title"><span><i class="fas fa-boxes"></i> My Listed Products</span></div>
+        <div id="myProductsList"><div class="empty-state"><i class="fas fa-box-open"></i><p>You haven't listed any products yet.</p></div></div>
+    </div>
+</div>
+
+<!-- ══ SALES TAB ══ -->
+<div class="tab-panel" id="tab-sales">
+    <div class="section" style="margin-top:16px;">
+        <div class="section-title"><span><i class="fas fa-chart-line"></i> Sales History</span></div>
+        <div class="sales-list" id="fullSalesList"><div class="empty-state"><i class="fas fa-receipt"></i><p>No sales recorded yet.</p></div></div>
+    </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="seller.html" class="nav-item active"><i class="fas fa-store"></i><span>Dashboard</span></a>
+    <a href="profile.html" class="nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
+    <a href="messages.html" class="nav-item"><i class="fas fa-comments"></i><span>Messages</span></a>
+    <a href="#" class="nav-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+</nav>
+
+<!-- ══ EDIT PRODUCT MODAL ══ -->
+<div id="editModal">
+    <div class="edit-backdrop" onclick="closeEditModal()"></div>
+    <div class="edit-sheet">
+        <div class="edit-sheet-header">
+            <h3><i class="fas fa-pen" style="color:var(--primary);margin-right:6px;"></i>Edit Product</h3>
+            <button class="edit-close-btn" onclick="closeEditModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="edit-sheet-body">
+            <input type="hidden" id="editProdId"/>
+            <div class="form-group"><label>Product Name *</label><input type="text" id="editProdName" placeholder="Product name"/></div>
+            <div class="form-row">
+                <div class="form-group"><label>Price (GH₵) *</label><input type="number" id="editProdPrice" step="0.01" min="0"/></div>
+                <div class="form-group"><label>Category *</label>
+                    <select id="editProdCategory">
+                        <option value="">Select...</option>
+                        <option>Beauty</option><option>Fashion</option><option>Electronics</option>
+                        <option>Sports</option><option>Home & Kitchen</option><option>Health</option><option>Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group"><label>Description</label><textarea id="editProdDesc" placeholder="Describe your product…"></textarea></div>
+            <div class="form-group"><label>Stock Quantity</label><input type="number" id="editProdStock" min="1"/></div>
+
+            <!-- Edit main image -->
+            <div class="form-group">
+                <label>Main Image</label>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <img id="editMainImgPreview" style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid #e0e0e0;display:none;" alt="main"/>
+                    <div class="img-upload-box" style="flex:1;min-width:120px;padding:12px;" onclick="document.getElementById('editMainImgInput').click()">
+                        <i class="fas fa-camera" style="font-size:1.2rem;"></i> Change photo
+                    </div>
+                    <input type="file" id="editMainImgInput" accept="image/*" style="display:none;"/>
+                </div>
+            </div>
+
+            <!-- Edit extra images -->
+            <div class="form-group">
+                <label>Extra Images</label>
+                <div class="edit-extra-row" id="editExtraRow"></div>
+                <div class="img-upload-box" style="margin-top:8px;" onclick="document.getElementById('editExtraInput').click()">
+                    <i class="fas fa-images"></i> Add more photos
+                </div>
+                <input type="file" id="editExtraInput" accept="image/*" multiple style="display:none;"/>
+            </div>
+
+            <span id="editError" style="color:#ff4b2b;font-size:0.85rem;display:block;min-height:1em;"></span>
+            <button class="edit-save-btn" onclick="saveEditedProduct()"><i class="fas fa-check"></i> Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- NOTIFICATIONS PANEL -->
+<div id="notifOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:998;"></div>
+<div id="notifPanel" style="display:none;position:fixed;top:0;right:0;bottom:0;width:340px;max-width:92vw;background:#fff;z-index:999;box-shadow:-4px 0 20px rgba(0,0,0,.15);flex-direction:column;">
+    <div style="padding:16px 18px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="font-size:1rem;color:var(--dark);"><i class="fas fa-bell"></i> Notifications</h3>
+        <button onclick="closeNotifPanel()" style="border:none;background:#f0f0f0;width:30px;height:30px;border-radius:50%;cursor:pointer;"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="notifList" style="flex:1;overflow-y:auto;padding:10px 14px;"></div>
+</div>
+
+<!-- CHAT MODAL (buyer <-> seller, per order) -->
+<div id="chatOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1998;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;width:92%;max-width:420px;height:70vh;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="padding:14px 18px;background:linear-gradient(135deg,var(--dark),#2d2d5e);color:#fff;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <div style="font-weight:700;font-size:0.95rem;">Chat — Order <span id="chatOrderRef"></span></div>
+                <div style="font-size:0.7rem;opacity:.8;">with the buyer</div>
+            </div>
+            <button onclick="closeChat()" style="border:none;background:rgba(255,255,255,.15);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="chatMessages" style="flex:1;overflow-y:auto;padding:14px;background:#f8f9fa;display:flex;flex-direction:column;gap:8px;"></div>
+        <div style="padding:10px;border-top:1px solid #f0f0f0;display:flex;gap:8px;">
+            <button onclick="messageDeliveryForCurrentOrder()" title="Message delivery rider on WhatsApp" style="border:none;background:#e8faf5;color:var(--green);width:40px;border-radius:10px;cursor:pointer;flex-shrink:0;"><i class="fab fa-whatsapp"></i></button>
+            <input type="text" id="chatInput" placeholder="Type a message…" style="flex:1;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:0.88rem;font-family:inherit;outline:none;">
+            <button onclick="sendChatMessage()" style="border:none;background:var(--primary);color:#fff;width:40px;border-radius:10px;cursor:pointer;flex-shrink:0;"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+const SWIFT_FEE = 0.05;
+// Same delivery WhatsApp number used on the storefront checkout — keep these in sync.
+const DELIVERY_WHATSAPP = '233552767149';
+
+// ── Auth check (Supabase) ──
+let user = null; // filled in by init() below — {id, name, email, phone, storeName, role, ...}
+
+async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+
+    const { data: profile, error } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+    if (error || !profile || profile.role !== 'seller') { window.location.href = 'login.html'; return; }
+
+    user = {
+        id: profile.id, name: profile.name, email: profile.email,
+        phone: profile.phone, storeName: profile.store_name, role: profile.role,
+    };
+
+    document.getElementById('sellerStoreName').textContent = user.storeName || user.name + "'s Store";
+
+    await loadSellerDashboard();
+    pollNotifications(false);
+    setInterval(() => pollNotifications(true), 15000);
+}
+
+// ── Tab switching ──
+function switchTab(name) {
+    document.querySelectorAll('.dash-tab').forEach((t,i) => {
+        const names = ['overview','addproduct','myproducts','sales'];
+        t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+    if (name === 'myproducts') renderMyProducts();
+    if (name === 'sales')      renderSales();
+    if (name === 'overview')   renderOverview();
+}
+
+// Maps a Supabase products/sales row to the camelCase shape the render
+// functions below already expect.
+function mapProductRow(p) {
+    return {
+        id: p.id, name: p.name, category: p.category, price: parseFloat(p.price),
+        description: p.description, image: p.image, extraImages: p.extra_images || [],
+    };
+}
+function mapSaleRow(s) {
+    return {
+        productName: s.product_name, qty: s.qty, gross: parseFloat(s.gross),
+        fee: parseFloat(s.fee), net: parseFloat(s.net),
+        date: new Date(s.sale_date).toLocaleDateString('en-GB'), ref: s.order_ref,
+    };
+}
+
+// ── Seller dashboard data (straight from Supabase — RLS already scopes
+//    every query to this seller's own rows) ──
+let sellerDashboard = { products: [], sales: [], stats: {} };
+
+async function loadSellerDashboard() {
+    try {
+        const [{ data: productsRaw }, { data: salesRaw }] = await Promise.all([
+            sb.from('products').select('*').eq('seller_id', user.id).order('created_at', { ascending: false }),
+            sb.from('sales').select('*').eq('seller_id', user.id).order('created_at', { ascending: false }),
+        ]);
+
+        const products = (productsRaw || []).map(mapProductRow);
+        const sales    = (salesRaw || []).map(mapSaleRow);
+        const totalGross = sales.reduce((s, x) => s + x.gross, 0);
+        const totalNet    = sales.reduce((s, x) => s + x.net, 0);
+        const totalFees   = sales.reduce((s, x) => s + x.fee, 0);
+
+        sellerDashboard = {
+            products, sales,
+            stats: {
+                totalProducts: products.length, totalSales: sales.length,
+                totalGross: round2(totalGross), totalNet: round2(totalNet), totalFees: round2(totalFees),
+            },
+        };
+        renderOverview();
+        renderMyProducts();
+        renderSales();
+    } catch (_) {
+        showToast('Could not reach the server. Please try again shortly.');
+    }
+}
+function round2(n) { return Math.round(n * 100) / 100; }
+
+
+// ── Main image preview ──
+let _mainImgData = '';
+document.getElementById('productImageInput').addEventListener('change', function(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        _mainImgData = ev.target.result;
+        const preview = document.getElementById('imgPreview');
+        preview.src = ev.target.result; preview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+});
+
+// ── Extra images preview ──
+let _extraImgData = [];
+document.getElementById('extraImagesInput').addEventListener('change', function(e) {
+    const files = Array.from(e.target.files).slice(0, 5 - _extraImgData.length);
+    files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+            _extraImgData.push(ev.target.result);
+            renderExtraPreviews();
+        };
+        reader.readAsDataURL(file);
+    });
+});
+
+function renderExtraPreviews() {
+    const el = document.getElementById('extraPreviews');
+    el.innerHTML = _extraImgData.map((src, i) => `
+        <div class="extra-preview-wrap">
+            <img src="${src}" alt="extra">
+            <button class="remove-extra" onclick="removeExtraImg(${i})"><i class="fas fa-times"></i></button>
+        </div>`).join('');
+}
+function removeExtraImg(idx) { _extraImgData.splice(idx, 1); renderExtraPreviews(); }
+
+// ── Fee preview ──
+document.getElementById('prodPrice').addEventListener('input', function() {
+    const price   = parseFloat(this.value) || 0;
+    const fee     = price * SWIFT_FEE;
+    const earning = price - fee;
+    const el      = document.getElementById('feePreview');
+    if (price > 0) {
+        el.innerHTML = `Price: <strong>GH₵ ${price.toFixed(2)}</strong> &nbsp;|&nbsp; Swift fee (5%): <strong>GH₵ ${fee.toFixed(2)}</strong> &nbsp;|&nbsp; <span style="color:var(--green)">You earn: <strong>GH₵ ${earning.toFixed(2)}</strong></span>`;
+    } else {
+        el.textContent = 'Enter a price to see your earnings after the 5% Swift fee.';
+    }
+});
+
+// ── Add product ──
+// Uploads images straight to Supabase Storage (products/{sellerId}/...),
+// then inserts the product row — RLS only lets a seller insert with their
+// own seller_id, so it lands in the shared database and shows up on the
+// homepage for every visitor immediately.
+async function uploadProductImage(file) {
+    const ext  = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${user.id}/${Date.now()}_${Math.floor(Math.random()*9999)}.${ext}`;
+    const { error } = await sb.storage.from('products').upload(path, file);
+    if (error) return null;
+    const { data: { publicUrl } } = sb.storage.from('products').getPublicUrl(path);
+    return publicUrl;
+}
+
+async function addProduct() {
+    const name       = document.getElementById('prodName').value.trim();
+    const price      = parseFloat(document.getElementById('prodPrice').value);
+    const category   = document.getElementById('prodCategory').value;
+    const desc       = document.getElementById('prodDesc').value.trim();
+    const imageInput = document.getElementById('productImageInput');
+    const extraInput = document.getElementById('extraImagesInput');
+    const errorEl     = document.getElementById('prodError');
+    const btn         = document.querySelector('#tab-addproduct .submit-btn');
+
+    if (!name || !price || !category) { errorEl.textContent = 'Please fill in Name, Price and Category.'; return; }
+    errorEl.textContent = '';
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting…';
+
+    try {
+        let imageUrl = '';
+        if (imageInput.files[0]) {
+            imageUrl = await uploadProductImage(imageInput.files[0]);
+            if (!imageUrl) { errorEl.textContent = 'Could not upload the main image.'; return; }
+        }
+        const extraUrls = [];
+        for (const file of Array.from(extraInput.files || [])) {
+            const url = await uploadProductImage(file);
+            if (url) extraUrls.push(url);
+        }
+
+        const { error } = await sb.from('products').insert({
+            seller_id: user.id,
+            seller_name: user.storeName || user.name,
+            seller_phone: user.phone || '',
+            name, price, category, description: desc,
+            image: imageUrl, extra_images: extraUrls,
+        });
+
+        if (error) { errorEl.textContent = error.message || 'Failed to list product.'; return; }
+
+        // Reset form
+        document.getElementById('prodName').value     = '';
+        document.getElementById('prodPrice').value    = '';
+        document.getElementById('prodCategory').value = '';
+        document.getElementById('prodDesc').value     = '';
+        document.getElementById('prodStock').value    = '1';
+        document.getElementById('imgPreview').style.display = 'none';
+        document.getElementById('feePreview').textContent   = 'Enter a price to see your earnings after the 5% Swift fee.';
+        document.getElementById('extraPreviews').innerHTML  = '';
+        imageInput.value = '';
+        extraInput.value = '';
+        _mainImgData  = '';
+        _extraImgData = [];
+
+        showToast('✅ Product listed! It\'s now live on the homepage for everyone.');
+        await loadSellerDashboard();
+        switchTab('myproducts');
+    } catch (err) {
+        errorEl.textContent = 'Network error. Please try again.';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-upload"></i> Post Product for Sale';
+    }
+}
+
+// ── Render my products ──
+function renderMyProducts() {
+    const list     = document.getElementById('myProductsList');
+    const products = sellerDashboard.products || [];
+    if (!products.length) {
+        list.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><p>You haven\'t listed any products yet.</p></div>';
+        return;
+    }
+    list.innerHTML = products.map(p => {
+        const fee     = p.price * SWIFT_FEE;
+        const earning = p.price - fee;
+        const imgTag  = p.image
+            ? `<img src="${p.image}" alt="${p.name}">`
+            : `<div style="width:60px;height:60px;background:#f0f0f0;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:1.5rem;flex-shrink:0;"><i class="fas fa-image"></i></div>`;
+        return `
+        <div class="product-item">
+            ${imgTag}
+            <div class="product-item-info">
+                <div class="product-item-name">${p.name}</div>
+                <div class="product-item-cat">${p.category}</div>
+                <div class="product-item-price">GH₵ ${p.price.toFixed(2)}</div>
+                <div class="product-item-fee">You earn: GH₵ ${earning.toFixed(2)} (after 5% fee)</div>
+            </div>
+            <div class="product-item-actions">
+                <button class="icon-btn edit-btn" onclick="openEditModal(${p.id})" title="Edit"><i class="fas fa-pen"></i></button>
+                <button class="icon-btn del-btn"  onclick="deleteProduct(${p.id})" title="Delete"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ── Delete product ──
+async function deleteProduct(productId) {
+    if (!confirm('Remove this product from sale?')) return;
+    const { error } = await sb.from('products').delete().eq('id', productId).eq('seller_id', user.id);
+    if (error) { showToast(error.message || 'Could not remove product.'); return; }
+    showToast('Product removed.');
+    await loadSellerDashboard();
+}
+
+// ══════════════════════════════════════════════
+//  EDIT PRODUCT MODAL
+// ══════════════════════════════════════════════
+let _editMainImg  = '';
+let _editExtraImgs = [];
+
+function openEditModal(productId) {
+    const product = (sellerDashboard.products || []).find(p => p.id === productId);
+    if (!product) return;
+
+    document.getElementById('editProdId').value       = productId;
+    document.getElementById('editProdName').value     = product.name;
+    document.getElementById('editProdPrice').value    = product.price;
+    document.getElementById('editProdCategory').value = product.category;
+    document.getElementById('editProdDesc').value     = product.description || '';
+    document.getElementById('editProdStock').value    = product.stock || 1;
+    document.getElementById('editError').textContent  = '';
+
+    _editMainImg      = product.image || '';
+    _editExtraImgs    = [...(product.extraImages || [])];
+    _editMainImgFile  = null;   // no new file chosen yet — keep existing image unless the seller picks a new one
+    _editExtraImgFiles = [];
+
+    // Main image preview
+    const mainPrev = document.getElementById('editMainImgPreview');
+    if (_editMainImg) { mainPrev.src = _editMainImg; mainPrev.style.display = 'block'; }
+    else { mainPrev.style.display = 'none'; }
+
+    renderEditExtraRow();
+    document.getElementById('editModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+// Edit main image — keep the real File for upload, base64 just for the preview
+let _editMainImgFile = null;
+document.getElementById('editMainImgInput').addEventListener('change', function(e) {
+    const file = e.target.files[0]; if (!file) return;
+    _editMainImgFile = file;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        _editMainImg = ev.target.result;
+        const prev = document.getElementById('editMainImgPreview');
+        prev.src = ev.target.result; prev.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+});
+
+// Edit extra images — same idea: real Files for upload, base64 for preview
+let _editExtraImgFiles = [];
+document.getElementById('editExtraInput').addEventListener('change', function(e) {
+    const files = Array.from(e.target.files).slice(0, 5 - _editExtraImgs.length);
+    files.forEach(file => {
+        _editExtraImgFiles.push(file);
+        const reader = new FileReader();
+        reader.onload = ev => { _editExtraImgs.push(ev.target.result); renderEditExtraRow(); };
+        reader.readAsDataURL(file);
+    });
+});
+
+function renderEditExtraRow() {
+    const el = document.getElementById('editExtraRow');
+    el.innerHTML = _editExtraImgs.map((src, i) => `
+        <div class="edit-extra-wrap">
+            <img src="${src}" alt="extra">
+            <button class="rm-edit-extra" onclick="removeEditExtra(${i})"><i class="fas fa-times"></i></button>
+        </div>`).join('');
+}
+function removeEditExtra(idx) { _editExtraImgs.splice(idx, 1); renderEditExtraRow(); }
+
+async function saveEditedProduct() {
+    const productId = parseInt(document.getElementById('editProdId').value);
+    const name      = document.getElementById('editProdName').value.trim();
+    const price     = parseFloat(document.getElementById('editProdPrice').value);
+    const category  = document.getElementById('editProdCategory').value;
+    const desc      = document.getElementById('editProdDesc').value.trim();
+    const errorEl   = document.getElementById('editError');
+    const saveBtn   = document.querySelector('.edit-save-btn');
+
+    if (!name || !price || !category) { errorEl.textContent = 'Name, Price and Category are required.'; return; }
+    errorEl.textContent = '';
+
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+    try {
+        const existing = (sellerDashboard.products || []).find(p => p.id === productId);
+
+        let imageUrl = existing?.image || '';
+        if (_editMainImgFile) {
+            const url = await uploadProductImage(_editMainImgFile);
+            if (url) imageUrl = url;
+        }
+
+        // _editExtraImgFiles holds only the NEWLY added files; existing
+        // extra image URLs that weren't removed are already base64/URL
+        // strings sitting in _editExtraImgs — upload just the new ones and
+        // merge with whichever existing URLs the seller kept.
+        const keptExisting = _editExtraImgs.filter(src => typeof src === 'string' && src.startsWith('http'));
+        const newlyUploaded = [];
+        for (const file of _editExtraImgFiles) {
+            const url = await uploadProductImage(file);
+            if (url) newlyUploaded.push(url);
+        }
+        const extraImages = [...keptExisting, ...newlyUploaded];
+
+        const { error } = await sb.from('products').update({
+            name, price, category, description: desc,
+            image: imageUrl, extra_images: extraImages,
+            seller_phone: user.phone || '',
+        }).eq('id', productId).eq('seller_id', user.id);
+
+        if (error) { errorEl.textContent = error.message || 'Failed to update product.'; return; }
+
+        showToast('Product updated!');
+        closeEditModal();
+        await loadSellerDashboard();
+    } catch (_) {
+        errorEl.textContent = 'Network error. Please try again.';
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-check"></i> Save Changes';
+    }
+}
+
+// ── Render sales ──
+function renderSales() {
+    const sales = sellerDashboard.sales || [];
+    const el    = document.getElementById('fullSalesList');
+    if (!sales.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-receipt"></i><p>No sales recorded yet.</p></div>'; return; }
+    el.innerHTML = sales.map(s => {
+        const chatBtn = s.ref
+            ? `<button onclick="openChat('${s.ref}')" title="Message buyer" style="border:none;background:#e8f0ff;color:#3a5fd9;width:30px;height:30px;border-radius:8px;cursor:pointer;margin-top:6px;"><i class="fas fa-comment-dots"></i></button>`
+            : '';
+        return `<div class="sale-item"><div class="sale-item-left"><div class="sale-name">${s.productName}</div><div class="sale-date">${s.date} &bull; Qty: ${s.qty}</div></div><div class="sale-item-right"><div class="sale-gross">GH₵ ${s.gross.toFixed(2)}</div><div class="sale-fee">- GH₵ ${s.fee.toFixed(2)} fee</div><div class="sale-net">= GH₵ ${s.net.toFixed(2)}</div>${chatBtn}</div></div>`;
+    }).join('');
+}
+
+// ── Render overview ──
+function renderOverview() {
+    const sales    = sellerDashboard.sales || [];
+    const products = sellerDashboard.products || [];
+    const stats    = sellerDashboard.stats || {};
+    document.getElementById('statEarnings').textContent = 'GH₵ ' + (stats.totalNet ?? 0).toFixed(2);
+    document.getElementById('statSales').textContent    = stats.totalSales ?? sales.length;
+    document.getElementById('statProducts').textContent = stats.totalProducts ?? products.length;
+    document.getElementById('statFee').textContent      = 'GH₵ ' + (stats.totalFees ?? 0).toFixed(2);
+
+    const recent = [...sales].reverse().slice(0, 3);
+    const el     = document.getElementById('recentSalesList');
+    if (!recent.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-receipt"></i><p>No sales yet. Start by adding products!</p></div>'; return; }
+    el.innerHTML = recent.map(s => {
+        return `<div class="sale-item"><div class="sale-item-left"><div class="sale-name">${s.productName}</div><div class="sale-date">${s.date}</div></div><div class="sale-item-right"><div class="sale-net">GH₵ ${s.net.toFixed(2)}</div><div class="sale-fee">after fee</div></div></div>`;
+    }).join('');
+}
+
+async function logout() {
+    if (confirm('Log out?')) {
+        await sb.auth.signOut(); // also clears the legacy localStorage mirror
+        window.location.href = 'login.html';
+    }
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ════════════════════════════════════════════════
+//  NOTIFICATIONS — auto-alerts the seller the instant
+//  a buyer completes an order
+// ════════════════════════════════════════════════
+let lastUnreadCount = 0;
+
+async function pollNotifications(announceNew) {
+    if (!user) return;
+    try {
+        const { data, error } = await sb
+            .from('notifications')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(50);
+        if (error) return;
+
+        const notifications = (data || []).map(n => ({
+            id: n.id, orderRef: n.order_ref, title: n.title, message: n.message,
+            isRead: n.is_read, createdAt: new Date(n.created_at).toLocaleString('en-GB'),
+        }));
+        const unreadCount = notifications.filter(n => !n.isRead).length;
+
+        const badge = document.getElementById('notifBadge');
+        if (unreadCount > 0) {
+            badge.style.display = 'flex';
+            badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+        } else {
+            badge.style.display = 'none';
+        }
+        if (announceNew && unreadCount > lastUnreadCount) {
+            showToast('🛒 New order received!');
+        }
+        lastUnreadCount = unreadCount;
+        window._notifCache = notifications;
+        if (document.getElementById('notifPanel').style.display === 'flex') renderNotifList();
+    } catch (_) {}
+}
+
+function renderNotifList() {
+    const list = window._notifCache || [];
+    const el   = document.getElementById('notifList');
+    if (!list.length) {
+        el.innerHTML = '<div class="empty-state"><i class="fas fa-bell-slash"></i><p>No notifications yet.</p></div>';
+        return;
+    }
+    el.innerHTML = list.map(n => `
+        <div style="background:${n.isRead ? '#fff' : '#fff9e6'};border:1px solid #f0f0f0;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;" onclick="openNotif(${n.id}, '${n.orderRef || ''}')">
+            <div style="font-size:0.85rem;font-weight:700;color:var(--dark);">${n.title}</div>
+            <div style="font-size:0.78rem;color:#666;margin:4px 0;">${n.message}</div>
+            <div style="font-size:0.68rem;color:#aaa;">${n.createdAt}</div>
+        </div>`).join('');
+}
+
+function openNotifPanel() {
+    document.getElementById('notifOverlay').style.display = 'block';
+    document.getElementById('notifPanel').style.display = 'flex';
+    renderNotifList();
+}
+function closeNotifPanel() {
+    document.getElementById('notifOverlay').style.display = 'none';
+    document.getElementById('notifPanel').style.display = 'none';
+}
+document.getElementById('notifBellBtn').addEventListener('click', e => { e.preventDefault(); openNotifPanel(); });
+document.getElementById('notifOverlay').addEventListener('click', closeNotifPanel);
+
+async function openNotif(id, orderRef) {
+    sb.from('notifications').update({ is_read: true }).eq('id', id).eq('user_id', user.id).then(() => {});
+    closeNotifPanel();
+    if (orderRef) openChat(orderRef);
+}
+
+// ════════════════════════════════════════════════
+//  CHAT — seller <-> buyer, scoped to one order
+// ════════════════════════════════════════════════
+let currentChatRef = null;
+let chatPollTimer   = null;
+
+async function openChat(ref) {
+    currentChatRef = ref;
+    document.getElementById('chatOrderRef').textContent = ref;
+    document.getElementById('chatOverlay').style.display = 'flex';
+    await loadChatMessages();
+    clearInterval(chatPollTimer);
+    chatPollTimer = setInterval(loadChatMessages, 4000);
+}
+function closeChat() {
+    document.getElementById('chatOverlay').style.display = 'none';
+    clearInterval(chatPollTimer);
+    currentChatRef = null;
+}
+
+async function loadChatMessages() {
+    if (!currentChatRef || !user) return;
+    try {
+        const { data, error } = await sb
+            .from('messages')
+            .select('*')
+            .eq('order_ref', currentChatRef)
+            .order('created_at', { ascending: true });
+        if (error) return;
+        const el = document.getElementById('chatMessages');
+        el.innerHTML = (data || []).map(m => {
+            const isMine = m.sender_id === user.id;
+            return `
+            <div style="max-width:80%;align-self:${isMine ? 'flex-end' : 'flex-start'};background:${isMine ? 'var(--primary)' : '#fff'};color:${isMine ? '#fff' : '#333'};border:${isMine ? 'none' : '1px solid #eee'};border-radius:12px;padding:8px 12px;font-size:0.85rem;">
+                ${!isMine ? `<div style="font-size:0.68rem;font-weight:700;opacity:.7;margin-bottom:2px;">${m.sender_name}</div>` : ''}
+                ${m.message}
+            </div>`;
+        }).join('') || '<div class="empty-state"><i class="fas fa-comments"></i><p>Say hello to your buyer!</p></div>';
+        el.scrollTop = el.scrollHeight;
+    } catch (_) {}
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    if (!message || !currentChatRef) return;
+    input.value = '';
+    await sb.rpc('send_message', { p_ref: currentChatRef, p_message: message });
+    loadChatMessages();
+}
+document.getElementById('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendChatMessage(); });
+
+// Seller can reach the delivery rider on WhatsApp straight from the chat
+function messageDeliveryForCurrentOrder() {
+    if (!currentChatRef) return;
+    const text = `Hi, checking in on delivery for order ${currentChatRef}. Any update?`;
+    window.open(`https://wa.me/${DELIVERY_WHATSAPP}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+}
+
+init();
+</script>
+</body>
+</html>
