@@ -2,6 +2,16 @@ body {
     font-family: Arial, Helvetica, sans-serif;
     margin: 0;
 }
+
+/* This page has no search bar in the header, so nav-links (profile icon,
+   About, cart) is the only child of .header-content. With the shared
+   kstyle.css rule of justify-content:space-between, a lone flex child
+   sits flush left — but on the homepage it appears flush right (pushed
+   there by the search bar). This keeps the About page's nav cluster in
+   that same right-aligned spot for visual consistency. */
+.desktop-header .header-content {
+    justify-content: flex-end;
+}
 html { box-sizing: border-box; }
 *, *:before, *:after { box-sizing: inherit; }
 
